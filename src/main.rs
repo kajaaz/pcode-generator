@@ -1,10 +1,23 @@
-fn main() {
-    let mut args = std::env::args();
-    let _ = args.next().unwrap();
-    let bin_file = args.next().unwrap();
-    println!("Binary File {bin_file}");
+use std::fs::File;
+use std::io::Write;
+use std::env;
+use icicle_vm;
+use pcode;
 
-    let mut vm = icicle_vm::build(&icicle_vm::cpu::Config {
+fn main() {
+    let mut args = env::args();
+    let _ = args.next().unwrap(); // Skip the first argument which is the program name
+    let bin_file = match args.next() {
+        Some(file) => file,
+        None => {
+            eprintln!("Usage: cargo run <path_to_binary_file>");
+            return;
+        }
+    };
+    println!("Binary File: {bin_file}");
+
+    println!("Building VM...");
+    let mut vm = match icicle_vm::build(&icicle_vm::cpu::Config {
         triple: "x86_64-linux-gnu".parse().unwrap(),
         enable_jit: false,
         enable_jit_mem: false,
@@ -14,17 +27,43 @@ fn main() {
         optimize_instructions: false,
         optimize_block: false,
         ..icicle_vm::cpu::Config::default()
-    })
-    .unwrap();
-    vm.env = icicle_vm::env::build_auto(&mut vm).unwrap();
-    vm.env.load(&mut vm.cpu, bin_file.as_bytes()).unwrap();
+    }) {
+        Ok(vm) => vm,
+        Err(e) => {
+            eprintln!("Failed to build VM: {:?}", e);
+            return;
+        }
+    };
 
-    // let it run, so it decompile the basic
+    println!("Setting up VM environment...");
+    vm.env = match icicle_vm::env::build_auto(&mut vm) {
+        Ok(env) => env,
+        Err(e) => {
+            eprintln!("Failed to set up VM environment: {:?}", e);
+            return;
+        }
+    };
+
+    println!("Loading binary file into VM...");
+    if let Err(e) = vm.env.load(&mut vm.cpu, bin_file.as_bytes()) {
+        eprintln!("Failed to load binary file: {:?}", e);
+        return;
+    }
+
+    println!("Running VM...");
     let end = vm.run();
     dbg!(end);
 
+    let mut output_file = match File::create("pcode_go-ethereum-geth.txt") {
+        Ok(file) => file,
+        Err(e) => {
+            eprintln!("Failed to create output file: {:?}", e);
+            return;
+        }
+    };
+
+    println!("Starting p-code generation and file writing...");
     for block_group in vm.code.map.values() {
-        // print the disassembly
         for block in &vm.code.blocks[block_group.range()] {
             for stmt in &block.pcode.instructions {
                 if !matches!(stmt.op, pcode::Op::InstructionMarker) {
@@ -37,14 +76,29 @@ fn main() {
                     .disasm
                     .get(&addr)
                     .map_or("invalid_instruction", |x| x.as_str());
-                println!("0x{addr:x}  {disasm}");
+
+                if let Err(e) = writeln!(output_file, "0x{addr:x}  {disasm}") {
+                    eprintln!("Failed to write to output file: {:?}", e);
+                    return;
+                }
             }
         }
 
-        //print the lifted code
-        let lifted = block_group
-            .to_string(&vm.code.blocks, &vm.cpu.arch.sleigh, true)
-            .unwrap();
-        println!("{lifted}");
+        let lifted = match block_group
+            .to_string(&vm.code.blocks, &vm.cpu.arch.sleigh, true) {
+            Ok(l) => l,
+            Err(e) => {
+                eprintln!("Failed to convert block group to string: {:?}", e);
+                return;
+            }
+        };
+
+        if let Err(e) = writeln!(output_file, "{lifted}") {
+            eprintln!("Failed to write to output file: {:?}", e);
+            return;
+        }
     }
+
+    println!("P-code generation and file writing completed.");
 }
+
