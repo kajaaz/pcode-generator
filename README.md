@@ -1,3 +1,5 @@
+:construction: **REPOSITORY UNDER CONSTRUCTION, DO NOT USE IT YET** :construction:
+
 # Pcode Generator
 Tool that generates raw Pcode (--raw-pcode) and high-level Pcode (--high-pcode) from a binary file using the Ghidra API.
 
