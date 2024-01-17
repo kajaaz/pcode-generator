@@ -22,12 +22,12 @@ fn main() {
     let filename = &args[1];
     let mode = &args[2];
 
-    // Ensure filename is not empty
+    // Checking if filename is not empty
     if filename.is_empty() {
         eprintln!("Filename cannot be empty.");
         return;
     }
-    
+
     match mode.as_str() {
         "--high-pcode" => {
             println!("Generating high pcode...");
@@ -43,8 +43,10 @@ fn main() {
                     Ok(_) => println!("Raw pcode generation completed."),
                     Err(err) => {
                         eprintln!("Error during raw pcode generation: {:?}", err);
-                        // Check if the panic was caused by a C++ exception
+                        
+                        // Checking if the panic was caused by a C++ exception
                         if let Some(cpp_exception) = err.downcast_ref::<Box<dyn std::any::Any + Send>>() {
+                        
                         if cpp_exception.type_id() == TypeId::of::<&str>() {
                             // If the C++ exception is of type &str, print it
                             if let Some(cpp_error) = cpp_exception.downcast_ref::<&str>() {
@@ -53,7 +55,8 @@ fn main() {
                                 eprintln!("Unknown C++ Exception");
                             }
                         } else {
-                            // Handle other types of C++ exceptions here
+                            
+                            // Handling other types of C++ exceptions
                             eprintln!("Unknown C++ Exception Type");
                         }
                     } else {

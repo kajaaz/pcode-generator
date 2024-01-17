@@ -1,6 +1,7 @@
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::Write;
 use std::env;
+use std::path::PathBuf;
 use icicle_vm;
 use pcode;
 
@@ -54,10 +55,41 @@ pub fn generate_high_pcode(filename: &str) {
     let end = vm.run();
     dbg!(end);
 
-    let output_filename = format!("{}_high_pcode.txt", filename);
-    let mut output_file = File::create(&output_filename)
-        .expect("Failed to create output file");
+    // New : Find the current executable's directory
+    let exe_path = env::current_exe().expect("Failed to get the current executable path");
+    let exe_dir = exe_path.parent().expect("Failed to get the executable directory");
+
+    // New : Navigate up two levels from the executable's directory to reach the project root
+    let project_root = exe_dir.parent().and_then(|p| p.parent()).expect("Failed to find the project root directory");
+
+    // New : Create the "results" directory in the project root
+    let results_dir = project_root.join("results");
+    if let Err(e) = fs::create_dir_all(&results_dir) {
+        eprintln!("Failed to create results directory: {:?}", e);
+        return;
+    }
+
+    // New : Extract the filename from the provided file path
+    let file_stem = PathBuf::from(filename)
+        .file_stem()
+        .expect("Failed to extract file stem")
+        .to_str()
+        .expect("Failed to convert file stem to string")
+        .to_owned();
+
+    // New : Modify the output filename to be inside the "results" directory
+    let output_filename = results_dir.join(format!("{}_high_pcode.txt", file_stem));
+    let mut output_file = match File::create(&output_filename) {
+        Ok(file) => file,
+        Err(e) => {
+            eprintln!("Failed to create output file at {:?}: {:?}", output_filename, e);
+            return;
+        }
+    };
     
+    // New : Print the full path of the output file for verification
+    println!("Output file will be created at: {:?}", output_filename);
+
     println!("Starting p-code generation and file writing...");
     for block_group in vm.code.map.values() {
         for block in &vm.code.blocks[block_group.range()] {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * Modified by @kajaaz on January 15, 2024
+ * Modified by @kajaaz in January 2024
  */
 /// \file raw_pcode_generator.hh
 /// \brief Classes and API for accessing a binary load image
@@ -85,7 +85,7 @@ public:
     virtual void loadFill(uint1 *ptr, int4 size, const Address &addr) override;
     virtual std::string getArchType(void) const override;
     virtual void adjustVma(long adjust) override;
-    virtual uintb getFileSize(void) const;
+    virtual uintb getFileSize(void) const; // New function added here, not exiting in LoadImage
 };
 
 } // End namespace ghidra

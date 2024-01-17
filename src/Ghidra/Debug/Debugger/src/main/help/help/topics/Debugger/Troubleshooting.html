@@ -1,0 +1,83 @@
+<!DOCTYPE doctype PUBLIC "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<HTML>
+  <HEAD>
+    <META name="generator" content=
+    "HTML Tidy for Java (vers. 2009-12-01), see jtidy.sourceforge.net">
+
+    <TITLE>Debugger: Troubleshooting</TITLE>
+    <META http-equiv="Content-Type" content="text/html; charset=windows-1252">
+    <LINK rel="stylesheet" type="text/css" href="help/shared/DefaultStyle.css">
+  </HEAD>
+
+  <BODY lang="EN-US">
+    <H1>Debugger: Troubleshooting</H1>
+
+    <P>Often, it's a good idea to troubleshoot by using the target platform's recommended debugger
+    without connecting it to Ghidra. If it doesn't work there, it's not likely to work in Ghidra,
+    since it relies on that debugger. For Linux, use gdb; for Windows, use WinDbg; for macOS, use
+    LLDB.</P>
+
+    <H2>Error Console</H2>
+
+    <P>The first place to look when you're having trouble is the Debug Console. Second, if you're
+    running from Eclipse, you can check its "Console" window. Often, Ghidra's Debug Console will
+    offer actions to help you resolve a well-known issue or configuration problem. It also
+    duplicates the error log when those messages are emitted from a debugger-related component.
+    These typically offer clues to exactly what has gone wrong.</P>
+
+    <H2>Settings and Toggles</H2>
+
+    <P>This list is not exhaustive, but here are some options to examine if you're having trouble.
+    In the FrontEnd tool, under <SPAN class="menu">Edit &rarr; Tool Options</SPAN>, select
+    "Debugger.Workflow."</P>
+
+    <UL>
+      <LI>"Map modules..." and "Map sections..." control how the debugger attempts to map static
+      and dynamic memory.</LI>
+
+      <LI>"Disassemble..." triggers automatic disassembly in the dynamic view.</LI>
+
+      <LI>"Show debugger interpreter..." automatically provides access to the command line.</LI>
+    </UL>
+
+    <P>In the Dynamic Listing:</P>
+
+    <UL>
+      <LI>"Sync to Static Listing" controls the tracking of the Static listing.</LI>
+    </UL>
+
+    <P>In the Objects provider:</P>
+
+    <UL>
+      <LI>"Record Automatically" causes a trace to be started when a Process object comes into
+      view. If the process object is not exposed automatically, you may have to expand the tree to
+      trigger the trace. If auto-record is toggled off, you'll need to hit "Record (R)" with the
+      process selected to start a trace.</LI>
+
+      <LI>"Subscribe to..." causes a particular object to be tracked by the trace. Processes,
+      threads, registers, memory, stack, and so forth are tracked automatically, but you may wish
+      to add other objects ad hoc.</LI>
+    </UL>
+
+    <P>In the Threads provider:</P>
+
+    <UL>
+      <LI>The "Track the tool to the latest snap" toggle determines whether the caret (and all
+      resulting information) should track the current thread position as it updates.</LI>
+
+      <LI>The "Synchronize trace activation..." toggle attempts to maintain synchronization between
+      the Object provider (i.e. the active target information) and the trace.</LI>
+    </UL>
+
+    <P>In the Debugger menu:</P>
+
+    <UL>
+      <LI>The "Save Traces By Default" toggle causes traces to be saved into the Ghidra project
+      database at the end of a session. (Open sessions will be re-opened with the tool in the
+      Threads window, reflected in the thin tabs at its top.)</LI>
+    </UL>
+
+    <P>Additional troubleshooting recommendations are given in the Debugger course materials.</P>
+  </BODY>
+</HTML>

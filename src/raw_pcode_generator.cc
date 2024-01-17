@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * Modified by @kajaaz on January 15, 2024
+ * Modified by @kajaaz in January 2024
  */
 
 #include "raw_pcode_generator.hh"
@@ -47,14 +47,6 @@ void PcodeEmitExtend::dump(const Address &addr, OpCode opc, VarnodeData *outvar,
     }
 
     pcodeOps.push_back(op);
-
-    // Format and write the p-code operation to the output file
-    outputFile << "PcodeOp at " << addr.getShortcut() << " Opcode: " << opc;
-    if (outvar != nullptr) {
-        outputFile << " Output: " << outvar->getAddr().getShortcut();
-    }
-    // Additional formatting for inputs can be added here
-    outputFile << std::endl;
 }
 
 const std::vector<PcodeOpRaw>& PcodeEmitExtend::getPcodeOps() const {
@@ -127,7 +119,7 @@ std::string RawLoadImagePcode::getArchType() const {
   return "x86";
 }
 
-// Get the filesize type
+// Get the filesize
 uintb RawLoadImagePcode::getFileSize() const {
   return filesize;
 }
@@ -171,6 +163,7 @@ void RawLoadImagePcode::loadFill(uint1 *ptr, int4 size, const Address &addr) {
   }
 }
 
+// Function used by main.rs to generate the raw pcode
 extern "C" const char* generate_raw_pcode(const char *filename) {
   if (filename == nullptr) {
     return strdup("Filename is null");
@@ -180,7 +173,7 @@ extern "C" const char* generate_raw_pcode(const char *filename) {
     ContextInternal context;
     Sleigh trans(&loader, &context);
 
-    std::string sleighSpecFile = "/home/kgorna/Documents/tools/pcode-generator/Ghidra/Processors/x86/data/languages/x86.slaspec"; // Update this path
+    std::string sleighSpecFile = "x86.slaspec"; // Update this path
     DocumentStorage docstorage;
     Element *sleighroot = docstorage.openDocument(sleighSpecFile)->getRoot();
     docstorage.registerTag(sleighroot);
@@ -201,12 +194,11 @@ extern "C" const char* generate_raw_pcode(const char *filename) {
                 // Output the pcode
                 const std::vector<PcodeOpRaw> &ops = pcodeemit.getPcodeOps();
                 for (const auto &op : ops) {
-                    // Format and output the p-code operation
+                    // Format and output the pcode operation
                     std::cout << "PcodeOp at " << op.getSeqNum().getAddr().getShortcut() << ", Opcode: " << op.getOpcode();
                     if (op.getOutput() != nullptr) {
                         std::cout << ", Output: " << op.getOutput()->getAddr().getShortcut();
                     }
-                    // Add more information if needed
                     std::cout << std::endl;
                 }
 
@@ -222,6 +214,5 @@ extern "C" const char* generate_raw_pcode(const char *filename) {
         throw std::runtime_error(error_msg);
         return strdup(e.what()); // Error, return the error message
     }
-}
-
+  }
 } // End namespace ghidra
