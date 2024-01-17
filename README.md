@@ -13,7 +13,7 @@ cd ../../../../../../..
 cd src
 ```  
 ### Example of use
-If you want to generate the raw Pcode of the binary "calculus", use the following command in ```pcode-generator/src```:
+If you want to generate the high-level Pcode of the binary "calculus", use the following command in ```pcode-generator/src```:
 ```
 cargo run /absolute/path/to/tests/calculus/calculus --high-pcode
 ```  
