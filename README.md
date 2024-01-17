@@ -26,3 +26,5 @@ g++ -c raw_pcode_generator.cc -o raw_pcode_generator.o -I/absolute/path/to/dir/p
 ```
 g++ -o raw_pcode_generator raw_pcode_generator.cc -L/absolute/path/to/dir/pcode-generator/ghidra/Ghidra/Features/Decompiler/src/decompile/cpp -ldecomp
 ```
+### Credits
+Thanks to @niooss-ledger, @rbran and @yhql.
