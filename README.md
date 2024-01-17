@@ -9,6 +9,7 @@ Make sure to build libdecomp.a in your repo before executing cargo run:
 git clone --recursive https://github.com/kajaaz/pcode-generator.git
 cd pcode-generator/ghidra/Ghidra/Features/Decompiler/src/decompile/cpp
 make libdecomp.a
+cd ../../../../../../..
 ```  
 ### Example of use
 If you want to generate the raw Pcode of the binary "calculus", use the following command:
