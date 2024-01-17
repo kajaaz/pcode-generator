@@ -10,11 +10,12 @@ git clone --recursive https://github.com/kajaaz/pcode-generator.git
 cd pcode-generator/ghidra/Ghidra/Features/Decompiler/src/decompile/cpp
 make libdecomp.a
 cd ../../../../../../..
+cd src
 ```  
 ### Example of use
-If you want to generate the raw Pcode of the binary "calculus", use the following command:
+If you want to generate the raw Pcode of the binary "calculus", use the following command in ```pcode-generator/src```:
 ```
-cargo run /absolute/path/to/tests/calculus/calculus --raw-pcode
+cargo run /absolute/path/to/tests/calculus/calculus --high-pcode
 ```  
 The output file with the generated Pcode can be found in the locally created ```results``` directory at the root of the repo.
 ### Debug
