@@ -75,7 +75,7 @@ public:
     }
 
     virtual string getArchType(void) const override { return "myload"; }
-    virtual void adjustVma(long adjust) override { /* add content */ }
+    virtual void adjustVma(long adjust) override { }
 
     uintb getBaseAddress() const { return baseaddr; }
     size_t getSize() const { return data.size(); }
@@ -125,13 +125,13 @@ void PcodeRawOut::dump(const Address &addr, OpCode opc, VarnodeData *outvar, Var
 }
 
 static void dumpPcode(Translate &trans) {
-  PcodeRawOut emit;    // Set up the pcode dumper
-  int4 length;         // Number of bytes of each machine instruction
+  PcodeRawOut emit;                                           // Set up the pcode dumper
+  int4 length;                                                // Number of bytes of each machine instruction
 
   // MODIFY HERE THE ADDRESSES
   // -------------------------------
-  Address addr(trans.getDefaultCodeSpace(), 0x80483b4); // First address to translate
-  Address lastaddr(trans.getDefaultCodeSpace(), 0x80483bf); // Last address
+  Address addr(trans.getDefaultCodeSpace(), 0x80483b4);       // First address to translate
+  Address lastaddr(trans.getDefaultCodeSpace(), 0x80483bf);   // Last address
   // -------------------------------
 
   std::ofstream outFile("../results/raw_pcode.txt");
@@ -141,17 +141,20 @@ static void dumpPcode(Translate &trans) {
     }
 
   while (addr < lastaddr) {
+
     //std::cout << "Processing instruction at address: " << std::hex << addr.getOffset() << std::endl;
-    length = trans.oneInstruction(emit, addr); // Translate instruction
+    
+    length = trans.oneInstruction(emit, addr);                  // Translate instruction
+    
     //std::cout << "Instruction length: " << length << std::endl;
 
     if (length > 0) {
-      addr = addr + length;                      // Advance to next instruction
+      addr = addr + length;                                     // Advance to next instruction
       outFile << emit.getPcode();
-      emit.clearPcode(); // Clear the string stream for the next instruction
+      emit.clearPcode();                                        // Clear the string stream for the next instruction
     } else {
       std::cerr << "No instruction translated at address: " << std::hex << addr.getOffset() << std::endl;
-      break; // Exit the loop if no instruction is translated
+      break;                                                    // Exit the loop if no instruction is translated
     }
   }
 
@@ -180,11 +183,11 @@ extern "C" const char* generate_raw_pcode(const char* filename) {
         DocumentStorage docstorage;
         Element *sleighroot = docstorage.openDocument(sleighfilename)->getRoot();
         docstorage.registerTag(sleighroot);
-        trans.initialize(docstorage); // Initialize the translator
+        trans.initialize(docstorage);                             // Initialize the translator
 
         // Set the default context
-        context.setVariableDefault("addrsize", 1); // Address size is 32-bit
-        context.setVariableDefault("opsize", 1); // Operand size is 32-bit
+        context.setVariableDefault("addrsize", 1);                // Address size is 32-bit
+        context.setVariableDefault("opsize", 1);                  // Operand size is 32-bit
 
         dumpPcode(trans);
 
