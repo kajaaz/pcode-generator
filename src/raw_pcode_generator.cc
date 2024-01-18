@@ -16,14 +16,15 @@
  * Modified by @kajaaz in January 2024
  */
 
-#include "../ghidra/Ghidra/Features/Decompiler/src/decompile/cpp/loadimage.hh"
-#include "../ghidra/Ghidra/Features/Decompiler/src/decompile/cpp/sleigh.hh"
-#include "../ghidra/Ghidra/Features/Decompiler/src/decompile/cpp/xml.hh"
 #include <iostream>
 #include <sstream>
 #include <vector>
 #include <fstream>
 #include <filesystem>
+
+#include "../ghidra/Ghidra/Features/Decompiler/src/decompile/cpp/loadimage.hh"
+#include "../ghidra/Ghidra/Features/Decompiler/src/decompile/cpp/sleigh.hh"
+#include "../ghidra/Ghidra/Features/Decompiler/src/decompile/cpp/xml.hh"
 
 using namespace std;
 
@@ -36,7 +37,9 @@ class MyLoadImage : public LoadImage {
     std::vector<uint1> data;
 
 public:
+    // Constructor: Initializes and loads a binary file into memory
     MyLoadImage(uintb ad, const std::string &filePath, uintb endAd) : LoadImage("nofile"), baseaddr(ad), endaddr(endAd) {
+        
         // Open the file
         std::ifstream file(filePath, std::ios::binary);
         if (!file) {
@@ -100,9 +103,7 @@ public:
   }
 };
 
-static void print_vardata(ostream &s,VarnodeData &data)
-
-{
+static void print_vardata(ostream &s,VarnodeData &data) {
   s << '(' << data.space->getName() << ',';
   data.space->printOffset(s,data.offset);
   s << ',' << dec << data.size << ')';
@@ -127,10 +128,12 @@ static void dumpPcode(Translate &trans) {
   PcodeRawOut emit;    // Set up the pcode dumper
   int4 length;         // Number of bytes of each machine instruction
 
+  // MODIFY HERE THE ADDRESSES
+  // -------------------------------
   Address addr(trans.getDefaultCodeSpace(), 0x80483b4); // First address to translate
   Address lastaddr(trans.getDefaultCodeSpace(), 0x80483bf); // Last address
+  // -------------------------------
 
-  
   std::ofstream outFile("../results/raw_pcode.txt");
     if (!outFile.is_open()) {
         std::cerr << "Failed to open output file." << std::endl;
@@ -153,10 +156,10 @@ static void dumpPcode(Translate &trans) {
   }
 
   outFile.close();
-  std::cout << "Pcode dumping completed." << std::endl;
+  std::cout << "Pcode dumping into output file located in '/results' completed." << std::endl;
 }
 
-
+// External function that is called by the main.rs program
 extern "C" const char* generate_raw_pcode(const char* filename) {
     try {
         // Initialize the required Ghidra components
@@ -189,8 +192,6 @@ extern "C" const char* generate_raw_pcode(const char* filename) {
         std::cerr << "Error in generate_raw_pcode: " << e.what() << std::endl;
         return nullptr;
     }
-
     return "Pcode generation completed";
-}
-
+  }
 } // End of namespace ghidra
