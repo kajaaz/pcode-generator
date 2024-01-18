@@ -22,6 +22,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <fstream>
 using namespace std;
 
 namespace ghidra {
@@ -75,28 +76,6 @@ public:
     size_t getSize() const { return data.size(); }
 };
 
-
-// Custom PcodeEmit class to capture pcode in a string
-class StringPcodeEmit : public PcodeEmit {
-std::ostringstream pcodeStream;
-
-virtual void dump(const Address &addr, OpCode opc, VarnodeData *outvar, VarnodeData *vars, int4 isize) override {
-    pcodeStream << addr.getShortcut() << std::hex << addr.getOffset() << ": ";
-    if (outvar) {
-        pcodeStream << "(" << outvar->space->getName() << ", 0x" << std::hex << outvar->offset << ", " << outvar->size << ") = ";
-    }
-    pcodeStream << get_opname(opc);
-    for (int i = 0; i < isize; ++i) {
-        pcodeStream << " (" << vars[i].space->getName() << ", 0x" << std::hex << vars[i].offset << ", " << vars[i].size << ")";
-    }
-    pcodeStream << std::endl;
-}
-public:
-std::string getPcode() const {
-return pcodeStream.str();
-}
-};
-
 class AssemblyRaw : public AssemblyEmit {
 public:
   virtual void dump(const Address &addr,const string &mnem,const string &body) {
@@ -105,24 +84,18 @@ public:
   }
 };
 
-static void dumpAssembly(Translate &trans)
-
-{ // Print disassembly of binary code
-  AssemblyRaw assememit;	// Set up the disassembly dumper
-  int4 length;			// Number of bytes of each machine instruction
-
-  Address addr(trans.getDefaultCodeSpace(),0x80483b4); // First disassembly address
-  Address lastaddr(trans.getDefaultCodeSpace(),0x804846c); // Last disassembly address
-
-  while(addr < lastaddr) {
-    length = trans.printAssembly(assememit,addr);
-    addr = addr + length;
-  }
-}
-
 class PcodeRawOut : public PcodeEmit {
+  std::ostringstream pcodeStream;
 public:
   virtual void dump(const Address &addr,OpCode opc,VarnodeData *outvar,VarnodeData *vars,int4 isize);
+  
+  std::string getPcode() const {
+    return pcodeStream.str();
+  }
+  void clearPcode() {
+    pcodeStream.str("");
+    pcodeStream.clear();
+  }
 };
 
 static void print_vardata(ostream &s,VarnodeData &data)
@@ -133,39 +106,53 @@ static void print_vardata(ostream &s,VarnodeData &data)
   s << ',' << dec << data.size << ')';
 }
 
-void PcodeRawOut::dump(const Address &addr,OpCode opc,VarnodeData *outvar,VarnodeData *vars,int4 isize)
-
-{
-  if (outvar != (VarnodeData *)0) {
-    print_vardata(cout,*outvar);
-    cout << " = ";
+void PcodeRawOut::dump(const Address &addr, OpCode opc, VarnodeData *outvar, VarnodeData *vars, int4 isize) {
+  // Write to pcodeStream instead of cout
+  if (outvar != nullptr) {
+    print_vardata(pcodeStream, *outvar);
+    pcodeStream << " = ";
   }
-  cout << get_opname(opc);
+  pcodeStream << get_opname(opc);
   // Possibly check for a code reference or a space reference
-  for(int4 i=0;i<isize;++i) {
-    cout << ' ';
-    print_vardata(cout,vars[i]);
+  for (int4 i = 0; i < isize; ++i) {
+    pcodeStream << ' ';
+    print_vardata(pcodeStream, vars[i]);
   }
-  cout << endl;
+  pcodeStream << '\n';
 }
 
-static void dumpPcode(Translate &trans)
+static void dumpPcode(Translate &trans) {
+  PcodeRawOut emit;    // Set up the pcode dumper
+  int4 length;         // Number of bytes of each machine instruction
 
-{ // Dump pcode translation of machine instructions
-  PcodeRawOut emit;		// Set up the pcode dumper
-  AssemblyRaw assememit;	// Set up the disassembly dumper
-  int4 length;			// Number of bytes of each machine instruction
+  Address addr(trans.getDefaultCodeSpace(), 0x80483b4); // First address to translate
+  Address lastaddr(trans.getDefaultCodeSpace(), 0x80483bf); // Last address
 
-  Address addr(trans.getDefaultCodeSpace(),0x80483b4); // First address to translate
-  Address lastaddr(trans.getDefaultCodeSpace(),0x80483bf); // Last address
-
-  while(addr < lastaddr) {
-    cout << "--- ";
-    trans.printAssembly(assememit,addr);
-    length = trans.oneInstruction(emit,addr); // Translate instruction
-    addr = addr + length;		// Advance to next instruction
+  std::ofstream outFile("raw_pcode.txt");
+  if (!outFile.is_open()) {
+    std::cerr << "Failed to open output file." << std::endl;
+    return;
   }
+
+  while (addr < lastaddr) {
+    //std::cout << "Processing instruction at address: " << std::hex << addr.getOffset() << std::endl;
+    length = trans.oneInstruction(emit, addr); // Translate instruction
+    //std::cout << "Instruction length: " << length << std::endl;
+
+    if (length > 0) {
+      addr = addr + length;                      // Advance to next instruction
+      outFile << emit.getPcode();
+      emit.clearPcode(); // Clear the string stream for the next instruction
+    } else {
+      std::cerr << "No instruction translated at address: " << std::hex << addr.getOffset() << std::endl;
+      break; // Exit the loop if no instruction is translated
+    }
+  }
+
+  outFile.close();
+  std::cout << "Pcode dumping completed." << std::endl;
 }
+
 
 extern "C" const char* generate_raw_pcode(const char* filename) {
     try {
@@ -179,9 +166,9 @@ extern "C" const char* generate_raw_pcode(const char* filename) {
         // Set up the context object
         ghidra::ContextInternal context;
 
-        // set up the SLEIGH translator with the filename as the architecture type
+        // Set up the SLEIGH translator with the filename as the architecture type
         std::string sleighfilename = "specfiles/x86.sla"; 
-        Sleigh trans(&loader,&context);
+        Sleigh trans(&loader, &context);
 
         // Read sleigh file into DOM
         DocumentStorage docstorage;
@@ -199,7 +186,8 @@ extern "C" const char* generate_raw_pcode(const char* filename) {
         std::cerr << "Error in generate_raw_pcode: " << e.what() << std::endl;
         return nullptr;
     }
-  }
+
+    return "Pcode generation completed";
 }
 
-
+} // End of namespace ghidra
