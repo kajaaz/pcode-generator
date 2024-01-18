@@ -19,6 +19,6 @@ fn main() {
 
     println!("cargo:rustc-link-search=native={}", lib_dir);
     println!("cargo:rustc-link-lib=static={}", lib_name);
-     println!("cargo:rerun-if-changed={}/raw_pcode_generator.cc", cpp_src_path);
+    println!("cargo:rerun-if-changed={}/raw_pcode_generator.cc", cpp_src_path);
     println!("cargo:rerun-if-changed=src/main.rs");
 }

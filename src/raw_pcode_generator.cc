@@ -23,6 +23,8 @@
 #include <sstream>
 #include <vector>
 #include <fstream>
+#include <filesystem>
+
 using namespace std;
 
 namespace ghidra {
@@ -128,11 +130,12 @@ static void dumpPcode(Translate &trans) {
   Address addr(trans.getDefaultCodeSpace(), 0x80483b4); // First address to translate
   Address lastaddr(trans.getDefaultCodeSpace(), 0x80483bf); // Last address
 
-  std::ofstream outFile("raw_pcode.txt");
-  if (!outFile.is_open()) {
-    std::cerr << "Failed to open output file." << std::endl;
-    return;
-  }
+  
+  std::ofstream outFile("../results/raw_pcode.txt");
+    if (!outFile.is_open()) {
+        std::cerr << "Failed to open output file." << std::endl;
+        return;
+    }
 
   while (addr < lastaddr) {
     //std::cout << "Processing instruction at address: " << std::hex << addr.getOffset() << std::endl;
