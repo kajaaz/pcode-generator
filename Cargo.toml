@@ -2,13 +2,11 @@
 name = "pcode-generator"
 version = "0.1.0"
 edition = "2021"
-build = "build.rs"
 
 [dependencies]
 icicle-vm = { path = "icicle-emu/icicle-vm" }
 pcode = { path = "icicle-emu/sleigh/pcode" }
-cxx = "1.0"
+ghidra-decompiler = { path = "ghidra-decompiler" }
 
-[build-dependencies]
-cxx-build = "1.0"
-cc = "1.0"
+[workspace]
+members = ["ghidra-decompiler"]

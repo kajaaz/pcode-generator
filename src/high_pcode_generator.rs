@@ -1,9 +1,9 @@
-use std::fs::{self, File};
-use std::io::Write;
-use std::env;
-use std::path::PathBuf;
 use icicle_vm;
 use pcode;
+use std::env;
+use std::fs::{self, File};
+use std::io::Write;
+use std::path::PathBuf;
 
 pub fn generate_high_pcode(filename: &str) {
     let mut args = env::args();
@@ -57,10 +57,15 @@ pub fn generate_high_pcode(filename: &str) {
 
     // New : Find the current executable's directory
     let exe_path = env::current_exe().expect("Failed to get the current executable path");
-    let exe_dir = exe_path.parent().expect("Failed to get the executable directory");
+    let exe_dir = exe_path
+        .parent()
+        .expect("Failed to get the executable directory");
 
     // New : Navigate up two levels from the executable's directory to reach the project root
-    let project_root = exe_dir.parent().and_then(|p| p.parent()).expect("Failed to find the project root directory");
+    let project_root = exe_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .expect("Failed to find the project root directory");
 
     // New : Create the "results" directory in the project root
     let results_dir = project_root.join("results");
@@ -82,11 +87,14 @@ pub fn generate_high_pcode(filename: &str) {
     let mut output_file = match File::create(&output_filename) {
         Ok(file) => file,
         Err(e) => {
-            eprintln!("Failed to create output file at {:?}: {:?}", output_filename, e);
+            eprintln!(
+                "Failed to create output file at {:?}: {:?}",
+                output_filename, e
+            );
             return;
         }
     };
-    
+
     // New : Print the full path of the output file for verification
     println!("Output file will be created at: {:?}", output_filename);
 
@@ -112,8 +120,7 @@ pub fn generate_high_pcode(filename: &str) {
             }
         }
 
-        let lifted = match block_group
-            .to_string(&vm.code.blocks, &vm.cpu.arch.sleigh, true) {
+        let lifted = match block_group.to_string(&vm.code.blocks, &vm.cpu.arch.sleigh, true) {
             Ok(l) => l,
             Err(e) => {
                 eprintln!("Failed to convert block group to string: {:?}", e);
