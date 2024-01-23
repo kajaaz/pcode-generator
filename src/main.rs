@@ -4,6 +4,7 @@ use std::env;
 
 pub mod high_pcode_generator;
 pub mod low_pcode_generator;
+pub mod pcode_generator;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
