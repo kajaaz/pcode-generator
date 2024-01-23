@@ -1,19 +1,20 @@
+use io::ErrorKind::*;
 use std::ffi::{OsStr, OsString};
 use std::path::Path;
 use std::{env, fs, io};
 
 pub fn create_output_file(input_name: &str, type_name: &str) -> io::Result<fs::File> {
     // New : Find the current executable's directory
-    let exe_path = env::current_exe().expect("Failed to get the current executable path");
+    let exe_path = env::current_exe()?;
     let exe_dir = exe_path
         .parent()
-        .expect("Failed to get the executable directory");
+        .ok_or_else(|| io::Error::new(NotFound, "Failed to get the executable directory"))?;
 
     // New : Navigate up two levels from the executable's directory to reach the project root
     let project_root = exe_dir
         .parent()
         .and_then(|p| p.parent())
-        .expect("Failed to find the project root directory");
+        .ok_or_else(|| io::Error::new(NotFound, "Failed to find the project root directory"))?;
 
     // New : Create the "results" directory in the project root
     let mut output_path = project_root.join("results");
