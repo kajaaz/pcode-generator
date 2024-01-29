@@ -19,7 +19,14 @@ FLAGS:
     --high-pcode         Generate an output file with the Ghidra high level Pcode instructions
     --raw-pcode          Generate an output file with the Ghidra raw (low level) Pcode instructions
 ```
+You need to modify the base and end addresses in ```/src/low_pcode_generator.rs``` to define the range of code that you want to translate to Pcode.
 
+```
+let base_addr = 0x100;  // Your base address
+let end_addr = 0x200;   // Your end address
+```  
+
+Be also aware that the first build will take 2 to 3 minutes. After that, the generation of the file should be done in several seconds.
 ## Example of use
 If you want to generate the high-level Pcode of the binary "calculus", use the following command in ```pcode-generator/src```:
 ```

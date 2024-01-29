@@ -13,6 +13,7 @@ using namespace ghidra;
 // translator
 class MyLoadImage : public LoadImage {
   uintb baseaddr;
+  uintb endaddr;
   vector<uint1> data;
 
 public:
@@ -29,9 +30,11 @@ public:
   ContextInternal context;
   DocumentStorage docstorage;
   Sleigh sleigh;
-  PcodeDecoder(string &specfile, vector<uint1> data);
+  PcodeDecoder(string &specfile, vector<uint1> data, uintb base, uintb end);
   rust::String decode_addr(uint64_t addr, uint64_t *instr_len) const;
 };
 
 unique_ptr<PcodeDecoder> new_pcode_decoder(rust::Str specfile,
-                                           rust::Str parsefile);
+                                           rust::Str parsefile,
+                                           uintb base_addr,
+                                           uintb end_addr);

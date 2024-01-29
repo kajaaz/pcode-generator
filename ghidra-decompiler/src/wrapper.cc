@@ -12,17 +12,16 @@ using namespace ghidra;
 // This is the only important method for the LoadImage. It returns bytes from
 // the static array depending on the address range requested
 void MyLoadImage::loadFill(uint1 *ptr, int4 size, const Address &addr) {
-  uint4 start = addr.getOffset();
-  uint4 max = baseaddr + data.size();
-  for (uint4 i = 0; i < size; ++i) { // For every byte requestes
-    uint4 curoff = start + i;        // Calculate offset of byte
-    if ((curoff < baseaddr) ||
-        (curoff >= max)) { // If byte does not fall in window
-      ptr[i] = 0;          // return 0
+  uintb start = addr.getOffset();
+  uintb max = min(endaddr, baseaddr + data.size());
+  for (int4 i = 0; i < size; ++i) {
+    uintb curoff = start + i;
+    if ((curoff < baseaddr) || (curoff >= max)) {
+      ptr[i] = 0;
       continue;
     }
-    uint4 diff = curoff - baseaddr;
-    ptr[i] = data[(uint4)diff]; // Otherwise return data from our window
+    uintb diff = curoff - baseaddr;
+    ptr[i] = data[diff];
   }
 }
 
@@ -67,8 +66,8 @@ void PcodeRawOut::dump(const Address &addr, OpCode opc, VarnodeData *outvar,
 
 // TODO configure a base address or just implement a elf reader instead of
 // using a raw binary
-PcodeDecoder::PcodeDecoder(string &specfile, vector<uint1> data)
-    : loader(0, data), sleigh(&loader, &context) {
+PcodeDecoder::PcodeDecoder(string &specfile, vector<uint1> data, uintb base, uintb end)
+    : loader(base, data), sleigh(&loader, &context) {
   // Read sleigh file into DOM
   Element *sleighroot = docstorage.openDocument(specfile)->getRoot();
   docstorage.registerTag(sleighroot);
@@ -93,8 +92,7 @@ rust::String PcodeDecoder::decode_addr(uint64_t addr_in,
   return string(emit.getPcode());
 }
 
-unique_ptr<PcodeDecoder> new_pcode_decoder(rust::Str specfile_str,
-                                           rust::Str parsefile_str) {
+unique_ptr<PcodeDecoder> new_pcode_decoder(rust::Str specfile_str, rust::Str parsefile_str, uintb base_addr, uintb end_addr) {
   std::string specfile(specfile_str);
   std::string parsefile(parsefile_str);
 
@@ -122,5 +120,7 @@ unique_ptr<PcodeDecoder> new_pcode_decoder(rust::Str specfile_str,
   ElementId::initialize();
 
   // Set up the assembler/pcode-translator
-  return unique_ptr<PcodeDecoder>(new PcodeDecoder(specfile, data));
+  return unique_ptr<PcodeDecoder>(new PcodeDecoder(specfile, data, base_addr, end_addr));
 }
+
+
