@@ -27,6 +27,9 @@ let end_addr = 0x200;   // Your end address
 ```  
 
 Be also aware that the first build will take 2 to 3 minutes. After that, the generation of the file should be done in several seconds.
+
+You can generate the raw Pcode of a binary using Pcode-generator and then use [Pcode-parser](https://github.com/kajaaz/pcode-parser/tree/main) to parse the produced pcode. 
+
 ## Example of use
 If you want to generate the high-level Pcode of the binary "calculus", use the following command in ```pcode-generator/src```:
 ```
