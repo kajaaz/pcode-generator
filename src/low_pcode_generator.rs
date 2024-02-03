@@ -4,7 +4,8 @@ pub fn generate_low_pcode(
     // TODO this should be a configurable path, not a constant value
     const PROJECT: &str = env!("CARGO_MANIFEST_DIR");
     let spec_file = format!("{PROJECT}/src/specfiles/x86.sla");
-    let decoder = ghidra_decompiler::PcodeDecoder::new(&spec_file, bin_file)?;
+    let file_len = std::fs::metadata(bin_file).unwrap().len();
+    let decoder = ghidra_decompiler::PcodeDecoder::new(&spec_file, bin_file, 0, file_len)?;
     // TODO implement a detection to identify the start and end of a
     // decompilation block.
     // for now always decompile 10 instructions
