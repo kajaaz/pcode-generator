@@ -1,10 +1,12 @@
 [package]
-name = "ice-kola"
+name = "pcode-generator"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-icicle-vm = { path = "../icicle-emu/icicle-vm" }
-pcode = { path = "../icicle-emu/sleigh/pcode" }
+icicle-vm = { path = "icicle-emu/icicle-vm" }
+pcode = { path = "icicle-emu/sleigh/pcode" }
+ghidra-decompiler = { path = "ghidra-decompiler" }
+
+[workspace]
+members = ["ghidra-decompiler"]
