@@ -5,4 +5,5 @@ use (
 	./tests/calculus_nil-deref
 	./tests/helloworld
 	./tests/sum
+	./tests/ptr_nil-deref
 )

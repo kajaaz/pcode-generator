@@ -5,8 +5,8 @@ pub fn generate_low_pcode(filename: &str) {
 
     // TO BE MODIFIED
     // -------------------------------
-    let base_addr = 0x0000000000414840;  //  Hardcoded base address - TODO: improve UX
-    let end_addr = 0x000000000015E24DF;   // Hardcoded end address - TODO: improve UX
+    let base_addr = 0x400f9c;  //  Hardcoded base address - TODO: improve UX
+    let end_addr = 0x55e8b0;   // Hardcoded end address - TODO: improve UX
     // -------------------------------
     // test tests/calculus/calculus with these values
     // let base_addr = 0x0000000000401000; 
@@ -18,7 +18,7 @@ pub fn generate_low_pcode(filename: &str) {
 
     // TODO this should be a configurable path, not a constant value
     const PROJECT: &str = env!("CARGO_MANIFEST_DIR");
-    let spec_file = format!("{PROJECT}/src/specfiles/x86.sla");
+    let spec_file = format!("{PROJECT}/src/specfiles/x86-64.sla");
     let decoder = ghidra_decompiler::PcodeDecoder::new(&spec_file, filename, base_addr, end_addr).unwrap();
     let mut output_file = pcode_generator::create_output_file(filename, "low")
         .expect("Unable to create the output file");

@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+#include <exception>
+
 #include "wrapper.hh"
 
 using namespace std;
@@ -75,8 +77,9 @@ PcodeDecoder::PcodeDecoder(string &specfile, vector<uint1> data, uintb base, uin
 
   // Now that context symbol names are loaded by the translator
   // we can set the default context
-  context.setVariableDefault("addrsize", 1); // Address size is 32-bit
-  context.setVariableDefault("opsize", 1);   // Operand size is 32-bit
+  context.setVariableDefault("longMode", 1); // Enable 64-bit mode
+  context.setVariableDefault("addrsize", 2); // Address size is 64-bit
+  context.setVariableDefault("opsize", 2);   // Operand size is 64-bit
 };
 
 // -------------------------------------
@@ -88,7 +91,20 @@ rust::String PcodeDecoder::decode_addr(uint64_t addr_in,
   Address addr(sleigh.getDefaultCodeSpace(), addr_in);
   PcodeRawOut emit; // Set up the pcode dumper
   int4 length;      // Number of bytes of each machine instruction
-  *instr_len = sleigh.oneInstruction(emit, addr); // Translate instruction
+
+  try {
+        *instr_len = sleigh.oneInstruction(emit, addr); // Translate instruction
+        return string(emit.getPcode());
+    } catch (const ghidra::LowlevelError &e) {
+        cerr << "LowlevelError occurred during disassembly: " << e.explain << endl;
+        return "Error: Disassembly failed due to LowlevelError.";
+    } catch (const std::exception &e) {
+        cerr << "Standard exception occurred during disassembly: " << e.what() << endl;
+        return "Error: Disassembly failed due to a standard exception.";
+    } catch (...) {
+        cerr << "Unknown exception occurred during disassembly." << endl;
+        return "Error: Disassembly failed due to an unknown error.";
+    }
   return string(emit.getPcode());
 }
 
