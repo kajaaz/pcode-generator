@@ -28,13 +28,14 @@ pub fn generate_low_pcode(filename: &str) {
         let (pcode, instruction_len) = decoder.decode_addr(addr).unwrap();
         
         // Uncomment this line if you want to print the corresponding address to the pcode
-        // if let Err(e) = writeln!(output_file, "0x{:x}\n{}", addr, pcode) {
-        
-        if let Err(e) = write!(output_file, "{}", pcode) {
-
+        if let Err(e) = write!(output_file, "0x{:x}\n{}", addr, pcode) {
             eprintln!("Failed to write to output file: {:?}", e);
             return;
         }
+        //if let Err(e) = write!(output_file, "{}", pcode) {
+        //    eprintln!("Failed to write to output file: {:?}", e);
+        //    return;
+        //}
         addr += instruction_len;
     }
 }
