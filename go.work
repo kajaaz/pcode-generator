@@ -6,4 +6,5 @@ use (
 	./tests/helloworld
 	./tests/sum
 	./tests/ptr_nil-deref
+	./tests/ptr_nil-deref_sleep
 )
