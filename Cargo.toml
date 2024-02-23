@@ -7,6 +7,7 @@ edition = "2021"
 icicle-vm = { path = "icicle-emu/icicle-vm" }
 pcode = { path = "icicle-emu/sleigh/pcode" }
 ghidra-decompiler = { path = "ghidra-decompiler" }
+goblin = "0.8.0"
 
 [workspace]
 members = ["ghidra-decompiler"]
