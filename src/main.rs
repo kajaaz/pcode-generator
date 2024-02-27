@@ -27,8 +27,14 @@ fn main() {
         }
         "--low-pcode" => {
             println!("Generating low pcode...");
-            let _ = low_pcode_generator::generate_low_pcode(&filename);
-            println!("Low pcode generation completed.");
+            let res = low_pcode_generator::generate_low_pcode(&filename);
+            match res {
+                Ok(()) => println!("Low pcode generation completed."),
+                Err(e) => {
+                    eprintln!("Unable to finish correctly: {e}");
+                    std::process::exit(-1);
+                }
+            }
         }
         _ => eprintln!("Invalid mode. Use --high-pcode or --low-pcode."),
     }
