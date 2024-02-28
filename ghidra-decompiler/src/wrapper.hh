@@ -1,3 +1,6 @@
+#ifndef WRAPPERHH
+#define WRAPPERHH
+
 #include <cstdint>
 #include <memory>
 
@@ -12,13 +15,11 @@ using namespace ghidra;
 // This is a tiny LoadImage class which feeds the executable bytes to the
 // translator
 class MyLoadImage : public LoadImage {
-  uintb baseaddr;
-  uintb endaddr;
-  vector<uint1> data;
+  uint8_t *rust_dec;
 
 public:
-  MyLoadImage(uintb ad, vector<uint1> data)
-      : LoadImage("nofile"), baseaddr(ad), data(data) {}
+  MyLoadImage(uint8_t *rust_dec)
+      : LoadImage("nofile"), rust_dec(rust_dec) {}
   virtual void loadFill(uint1 *ptr, int4 size, const Address &addr);
   virtual string getArchType(void) const { return "myload"; }
   virtual void adjustVma(long adjust) {}
@@ -30,11 +31,10 @@ public:
   ContextInternal context;
   DocumentStorage docstorage;
   Sleigh sleigh;
-  PcodeDecoder(string &specfile, vector<uint1> data, uintb base, uintb end);
+  PcodeDecoder(string &specfile, uint8_t *rust_dec);
   rust::String decode_addr(uint64_t addr, uint64_t *instr_len) const;
 };
 
-unique_ptr<PcodeDecoder> new_pcode_decoder(rust::Str specfile,
-                                           rust::Str parsefile,
-                                           uintb base_addr,
-                                           uintb end_addr);
+unique_ptr<PcodeDecoder> new_pcode_decoder(rust::Str specfile, uint8_t *rust_dec);
+
+#endif //WRAPPERHH

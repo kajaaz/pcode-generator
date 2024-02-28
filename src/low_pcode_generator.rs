@@ -5,9 +5,7 @@ use std::io::{self, Read, Write};
 
 pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
     // Helper function to convert a goblin error to io::Error
-    let to_io_error = |e: goblin::error::Error| {
-        io::Error::new(io::ErrorKind::Other, e.to_string())
-    };
+    let to_io_error = |e: goblin::error::Error| io::Error::new(io::ErrorKind::Other, e.to_string());
 
     // Read the binary file
     let mut f = File::open(filename)?;
@@ -17,49 +15,33 @@ pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
     // Parse the ELF file
     let elf = Elf::parse(&buffer).map_err(to_io_error)?;
 
-    // Dynamically determine base and end addresses from LOAD sections
-    let base_addr = elf.program_headers.iter()
-        .filter(|ph| ph.p_type == goblin::elf::program_header::PT_LOAD)
-        .map(|ph| ph.p_vaddr)
-        .min()
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "LOAD section for base address not found"))?;
-    println!("base_address : {:#x}", base_addr);
-
-    // Correctly calculate the end address
-    let load_sections: Vec<_> = elf.program_headers.iter()
-        .filter(|ph| ph.p_type == goblin::elf::program_header::PT_LOAD)
-        .collect();
-
-    if load_sections.len() < 3 {
-        return Err(io::Error::new(io::ErrorKind::Other, "Less than three LOAD sections found"));
-    }
-
-    let third_load_section = load_sections[2];
-    let end_addr = third_load_section.p_vaddr + third_load_section.p_filesz; // no -1 because '<' in the loop below
-    println!("end_address : {:#x}", end_addr);
-
     // Adjusted for dynamic addresses
     const PROJECT: &str = env!("CARGO_MANIFEST_DIR");
     let spec_file = format!("{}/src/specfiles/x86-64.sla", PROJECT);
-    let decoder = ghidra_decompiler::PcodeDecoder::new(&spec_file, filename, base_addr, end_addr)
+    let mut decoder = ghidra_decompiler::PcodeDecoder::new(&spec_file, &mut f, &elf)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
     let mut output_file = pcode_generator::create_output_file(filename, "low")
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
 
-    let mut addr = base_addr;
-    while addr < end_addr {
-        let (pcode, instruction_len) = decoder.decode_addr(addr)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-        
-        // Write to output file
-        // write!(output_file, "{}", pcode)
-        write!(output_file, "0x{:x}\n{}", addr, pcode)?;
-        addr += instruction_len;
+    // determine base and end addresses for all executable sections
+    let sections = elf
+        .section_headers
+        .iter()
+        .filter(|ph| ph.is_executable())
+        .map(|ph| (ph.sh_addr, ph.sh_addr + ph.sh_size));
+    for (base_addr, end_addr) in sections {
+        let mut addr = base_addr;
+        while addr < end_addr {
+            let (pcode, instruction_len) = decoder
+                .decode_addr(addr)
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+
+            // Write to output file
+            // write!(output_file, "{}", pcode)
+            write!(output_file, "0x{:x}\n{}", addr, pcode)?;
+            addr += instruction_len;
+        }
     }
 
     Ok(())
 }
-
-
-
-        

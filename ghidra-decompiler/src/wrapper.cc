@@ -6,6 +6,7 @@
 
 #include <exception>
 
+#include "ghidra-decompiler/src/lib.rs.h"
 #include "wrapper.hh"
 
 using namespace std;
@@ -14,17 +15,7 @@ using namespace ghidra;
 // This is the only important method for the LoadImage. It returns bytes from
 // the static array depending on the address range requested
 void MyLoadImage::loadFill(uint1 *ptr, int4 size, const Address &addr) {
-  uintb start = addr.getOffset();
-  uintb max = min(endaddr, baseaddr + data.size());
-  for (int4 i = 0; i < size; ++i) {
-    uintb curoff = start + i;
-    if ((curoff < baseaddr) || (curoff >= max)) {
-      ptr[i] = 0;
-      continue;
-    }
-    uintb diff = curoff - baseaddr;
-    ptr[i] = data[diff];
-  }
+  load_fill(rust_dec, ptr, size, addr.getOffset());
 }
 
 // -------------------------------
@@ -68,8 +59,8 @@ void PcodeRawOut::dump(const Address &addr, OpCode opc, VarnodeData *outvar,
 
 // TODO configure a base address or just implement a elf reader instead of
 // using a raw binary
-PcodeDecoder::PcodeDecoder(string &specfile, vector<uint1> data, uintb base, uintb end)
-    : loader(base, data), sleigh(&loader, &context) {
+PcodeDecoder::PcodeDecoder(string &specfile, uint8_t *rust_dec)
+    : loader(rust_dec), sleigh(&loader, &context) {
   // Read sleigh file into DOM
   Element *sleighroot = docstorage.openDocument(specfile)->getRoot();
   docstorage.registerTag(sleighroot);
@@ -93,50 +84,28 @@ rust::String PcodeDecoder::decode_addr(uint64_t addr_in,
   int4 length;      // Number of bytes of each machine instruction
 
   try {
-        *instr_len = sleigh.oneInstruction(emit, addr); // Translate instruction
-        return string(emit.getPcode());
-    } catch (const ghidra::LowlevelError &e) {
-        cerr << "LowlevelError occurred during disassembly: " << e.explain << endl;
-        return "Error: Disassembly failed due to LowlevelError.";
-    } catch (const std::exception &e) {
-        cerr << "Standard exception occurred during disassembly: " << e.what() << endl;
-        return "Error: Disassembly failed due to a standard exception.";
-    } catch (...) {
-        cerr << "Unknown exception occurred during disassembly." << endl;
-        return "Error: Disassembly failed due to an unknown error.";
-    }
+    *instr_len = sleigh.oneInstruction(emit, addr); // Translate instruction
+  } catch (const ghidra::LowlevelError &e) {
+    throw runtime_error("Error: Disassembly failed due to LowlevelError: " +
+                        e.explain);
+  } catch (const std::exception &e) {
+    throw runtime_error(
+        string("Error: Disassembly failed due to a standard exception: ") +
+        e.what());
+  } catch (...) {
+    throw runtime_error("Error: Disassembly failed due to an unknown error.");
+  }
   return string(emit.getPcode());
 }
 
-unique_ptr<PcodeDecoder> new_pcode_decoder(rust::Str specfile_str, rust::Str parsefile_str, uintb base_addr, uintb end_addr) {
+unique_ptr<PcodeDecoder> new_pcode_decoder(rust::Str specfile_str,
+                                           uint8_t *rust_dec) {
   std::string specfile(specfile_str);
-  std::string parsefile(parsefile_str);
-
-  // Open the file, in raw binary mode for now
-  std::ifstream file(parsefile, ios::binary);
-  if (!file) {
-    throw std::runtime_error("Unable to open file");
-  }
-
-  // Determine the size to read
-  file.seekg(0, ios::end);
-  int size = file.tellg();
-  file.seekg(0, ios::beg);
-
-  // Resize the buffer and read the data
-  vector<uint1> data(size);
-  if (!file.read(reinterpret_cast<char *>(data.data()), size)) {
-    throw std::runtime_error("Error reading file");
-  }
-  data.resize(size);
-  file.close();
 
   // static initializations
   AttributeId::initialize();
   ElementId::initialize();
 
   // Set up the assembler/pcode-translator
-  return unique_ptr<PcodeDecoder>(new PcodeDecoder(specfile, data, base_addr, end_addr));
+  return unique_ptr<PcodeDecoder>(new PcodeDecoder(specfile, rust_dec));
 }
-
-
