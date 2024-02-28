@@ -24,34 +24,41 @@ pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
 
     // determine base and end addresses for all executable sections
-    // let sections = elf
-    //     .section_headers
-    //     .iter()
-    //     .filter(|ph| ph.is_executable())
-    //     .map(|ph| (ph.sh_addr, ph.sh_addr + ph.sh_size));
+    let sections = elf.section_headers.iter()
+        .filter(|ph| ph.is_executable())
+        .map(|ph| (ph.sh_addr, ph.sh_addr + ph.sh_size))
+        .collect::<Vec<_>>();
 
-    // Extract the first LOAD segment with execute permission
-    let exec_segments = elf.program_headers.iter()
-        .filter(|ph| ph.p_type == goblin::elf::program_header::PT_LOAD && ph.is_executable())
-        .map(|ph| (ph.p_vaddr, ph.p_vaddr + ph.p_memsz))
-        .take(1); // Take only the first matching LOAD segment
+    for (start_addr, end_addr) in sections {
+            println!("Start Address: 0x{:x}", start_addr);
+            println!("End Address: 0x{:x}", end_addr);
+            let mut addr = start_addr;
+            while addr < end_addr {
+                match decoder.decode_addr(addr) {
+                    Ok((pcode, instruction_len)) => {
+                        write!(output_file, "0x{:x}\n{}", addr, pcode)?;
+                        addr += instruction_len;
+                    },
+                    Err(e) => {
+                        eprintln!("Error at address 0x{:x}", addr);
 
-    // MODIFY sections / exec_segments ?
-    for (base_addr, end_addr) in exec_segments {
-        println!("Base Address: 0x{:x}", base_addr);
-        println!("End Address: 0x{:x}", end_addr);
-        let mut addr = base_addr;
-        while addr < end_addr {
-            let (pcode, instruction_len) = decoder
-                .decode_addr(addr)
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-
-            // Write to output file
-            // write!(output_file, "{}", pcode)
-            write!(output_file, "0x{:x}\n{}", addr, pcode)?;
-            addr += instruction_len;
+                        let offset = addr.saturating_sub(elf.header.e_entry as u64) as usize;
+                        let snippet = buffer.get(offset..offset + 16);
+                        if let Some(bytes) = snippet {
+                            eprintln!("Raw data at 0x{:x}: {:?}", addr, bytes);
+                        } else {
+                            eprintln!("Unable to retrieve raw data at 0x{:x}.", addr);
+                        }
+                        eprintln!("Error details: {}", e);
+                        
+                        // Stop processing further on error
+                        return Err(io::Error::new(io::ErrorKind::Other, "Disassembly error, stopping."));
+                    }
+                }
+            }   
         }
-    }
 
     Ok(())
 }
+
+
