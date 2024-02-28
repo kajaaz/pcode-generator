@@ -15,7 +15,7 @@ pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
     // Parse the ELF file
     let elf = Elf::parse(&buffer).map_err(to_io_error)?;
 
-    // Adjusted for dynamic addresses
+    // Configuration
     const PROJECT: &str = env!("CARGO_MANIFEST_DIR");
     let spec_file = format!("{}/src/specfiles/x86-64.sla", PROJECT);
     let mut decoder = ghidra_decompiler::PcodeDecoder::new(&spec_file, &mut f, &elf)
@@ -24,12 +24,22 @@ pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
 
     // determine base and end addresses for all executable sections
-    let sections = elf
-        .section_headers
-        .iter()
-        .filter(|ph| ph.is_executable())
-        .map(|ph| (ph.sh_addr, ph.sh_addr + ph.sh_size));
-    for (base_addr, end_addr) in sections {
+    // let sections = elf
+    //     .section_headers
+    //     .iter()
+    //     .filter(|ph| ph.is_executable())
+    //     .map(|ph| (ph.sh_addr, ph.sh_addr + ph.sh_size));
+
+    // Extract the first LOAD segment with execute permission
+    let exec_segments = elf.program_headers.iter()
+        .filter(|ph| ph.p_type == goblin::elf::program_header::PT_LOAD && ph.is_executable())
+        .map(|ph| (ph.p_vaddr, ph.p_vaddr + ph.p_memsz))
+        .take(1); // Take only the first matching LOAD segment
+
+    // MODIFY sections / exec_segments ?
+    for (base_addr, end_addr) in exec_segments {
+        println!("Base Address: 0x{:x}", base_addr);
+        println!("End Address: 0x{:x}", end_addr);
         let mut addr = base_addr;
         while addr < end_addr {
             let (pcode, instruction_len) = decoder
