@@ -58,7 +58,10 @@ pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
                     eprintln!("Error details: {}", e);
                     
                     // Stop processing further on error
-                    return Err(io::Error::new(io::ErrorKind::Other, "Disassembly error, stopping."));
+                    //return Err(io::Error::new(io::ErrorKind::Other, "Disassembly error, stopping."));
+
+                    // Skip the problematic instruction (1 bytes = smallest instruction lengh for x86-64)
+                    addr += 1; 
                 }
             }
         }   
