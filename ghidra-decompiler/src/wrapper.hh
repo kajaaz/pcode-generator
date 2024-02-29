@@ -33,6 +33,7 @@ public:
   Sleigh sleigh;
   PcodeDecoder(string &specfile, uint8_t *rust_dec);
   rust::String decode_addr(uint64_t addr, uint64_t *instr_len) const;
+  void updateContext(void);
 };
 
 unique_ptr<PcodeDecoder> new_pcode_decoder(rust::Str specfile, uint8_t *rust_dec);

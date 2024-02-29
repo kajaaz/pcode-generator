@@ -98,6 +98,12 @@ rust::String PcodeDecoder::decode_addr(uint64_t addr_in,
   return string(emit.getPcode());
 }
 
+void PcodeDecoder::updateContext(void) {
+    context.setVariableDefault("longMode", 1); // Enable 64-bit mode
+    context.setVariableDefault("addrsize", 2); // Address size is 64-bit
+    context.setVariableDefault("opsize", 2);   // Operand size is 64-bit
+}
+
 unique_ptr<PcodeDecoder> new_pcode_decoder(rust::Str specfile_str,
                                            uint8_t *rust_dec) {
   std::string specfile(specfile_str);
