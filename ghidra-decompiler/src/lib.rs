@@ -1,3 +1,12 @@
+#![allow(non_upper_case_globals)]
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
+// scary!
+#![allow(improper_ctypes)]
+pub mod sys {
+    include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+}
+
 use std::{fs::File, os::unix::fs::FileExt, pin::Pin, mem::MaybeUninit};
 
 use goblin::elf::Elf;
