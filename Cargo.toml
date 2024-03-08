@@ -10,4 +10,4 @@ ghidra-decompiler = { path = "ghidra-decompiler" }
 goblin = "0.8.0"
 
 [workspace]
-members = ["ghidra-decompiler"]
+members = ["ghidra-decompiler", "scripts/callother_count", "scripts/common_operations"]
