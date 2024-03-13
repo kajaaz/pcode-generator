@@ -5,7 +5,7 @@ use regex::Regex;
 use xml::reader::{EventReader, XmlEvent};
 
 fn main() -> io::Result<()> {
-    let input_path = "/home/kgorna/Documents/tools/pcode-generator/results/calculus_low_pcode.txt";
+    let input_path = "/home/kgorna/Documents/tools/pcode-generator/results/additiongo_low_pcode.txt";
     let output_path = "output.txt";
     let callother_database_path = "/home/kgorna/Documents/tools/pcode-generator/scripts/callother_count/src/callother-database.txt";
 

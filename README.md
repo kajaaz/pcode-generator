@@ -6,6 +6,11 @@ Make sure to install submodules and configure the correct path to Ghidra:
 ```
 git clone --recursive https://github.com/kajaaz/pcode-generator.git
 export GHIDRA_SRC=${HOME}/path/to/pcode-generator/ghidra
+
+# Set environment variables for CGO to find BoringSSL if working with Go binaries
+export CGO_CFLAGS="-I/path/to/boringssl/include"
+export CGO_LDFLAGS="-L/path/to/boringssl/build/ssl -L/path/to/boringssl/build/crypto"
+export LD_LIBRARY_PATH="/path/to/boringssl/build/ssl:/path/to/boringssl/build/crypto:$LD_LIBRARY_PATH"
 ```
 Make also sure to have Rust and C++ installed.
 

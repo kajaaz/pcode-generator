@@ -49,6 +49,7 @@ fn main() {
         .clang_arg(&format!("-I{disassembler_dir}"))
         .clang_arg("-std=c++14")
         //.disable_untagged_union()
+        .clang_arg("-I/usr/include/c++/11")
         .enable_cxx_namespaces()
         .vtable_generation(true)
         .allowlist_type("ghidra::.*")
