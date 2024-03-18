@@ -7,9 +7,9 @@ pub mod sys {
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 }
 
-use std::{fs::File, os::unix::fs::FileExt, pin::Pin, mem::MaybeUninit};
+use std::{cmp, fs::File, mem::MaybeUninit, os::unix::fs::FileExt, pin::Pin};
 
-use goblin::elf::Elf;
+use goblin::elf::{section_header::SHT_NOBITS, Elf};
 
 #[cxx::bridge]
 mod ffi {
@@ -56,41 +56,30 @@ impl<'a> PcodeDecoder<'a> {
     pub fn load_fill(&mut self, data: &mut [u8], addr: u64) {
         let start = addr;
         let end = addr + u64::try_from(data.len()).unwrap();
-        // TODO deal with reads between sections
-        let Some((data_offset, file_offset, read_size)) =
-            self.elf.section_headers.iter().find_map(|header| {
-                let section_start = header.sh_addr;
-                let section_end = section_start + header.sh_size;
-                let section_range = section_start..section_end;
-                (section_range.contains(&start)
-                    || section_range.contains(&end)
-                    || (start..end).contains(&section_start)
-                    || (start..end).contains(&section_end))
-                .then(|| {
-                    let fill_before = section_start.saturating_sub(start);
-                    let fill_after = end.saturating_sub(section_end);
-                    let skip_section = start.saturating_sub(section_start);
-                    let offset = header.sh_offset + skip_section;
-                    let section_size_left = header.sh_size - skip_section;
-                    let size_left = (u64::try_from(data.len()).unwrap() - fill_before) - fill_after;
-                    let size = section_size_left.min(size_left);
-                    (
-                        usize::try_from(fill_before).unwrap(),
-                        offset,
-                        usize::try_from(size).unwrap(),
+
+        data.fill(0);
+        for header in self.elf.section_headers.iter() {
+            if header.sh_type == SHT_NOBITS {
+                // Ignore sections without file bytes
+                continue;
+            }
+            let section_start = header.sh_addr;
+            let section_end = section_start + header.sh_size;
+
+            // Test the intersection between (start..end) and (section_start..section_end)
+            if start < section_end && end > section_start {
+                let intersection_start = cmp::max(start, section_start);
+                let intersection_end = cmp::min(end, section_end);
+                let file_offset = header.sh_offset + (intersection_start - section_start);
+                self.file
+                    .read_exact_at(
+                        &mut data[(intersection_start - start) as usize
+                            ..(intersection_end - start) as usize],
+                        file_offset,
                     )
-                })
-            })
-        else {
-            data.fill(0);
-            return;
-        };
-        data[0..data_offset].fill(0);
-        let rest = &mut data[data_offset..];
-        self.file
-            .read_exact_at(&mut rest[0..read_size], file_offset)
-            .unwrap();
-        rest[read_size..].fill(0);
+                    .unwrap();
+            }
+        }
     }
 }
 
