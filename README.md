@@ -1,20 +1,31 @@
 # Pcode Generator
 Tool that generates low-level (raw) Pcode and high-level Pcode from a binary file using the Ghidra API.
 
-## Install
-Make sure to install submodules and configure the correct path to Ghidra:
-```
-git clone --recursive https://github.com/kajaaz/pcode-generator.git
-export GHIDRA_SRC=${HOME}/path/to/pcode-generator/ghidra
+Currently covered and partiely tested binaries handling from following languages : Golang, C.
 
-# Set environment variables for CGO to find BoringSSL if working with Go binaries
-export CGO_CFLAGS="-I/path/to/boringssl/include"
-export CGO_LDFLAGS="-L/path/to/boringssl/build/ssl -L/path/to/boringssl/build/crypto"
-export LD_LIBRARY_PATH="/path/to/boringssl/build/ssl:/path/to/boringssl/build/crypto:$LD_LIBRARY_PATH"
+## Install
+Make sure to have Rust and C++ installed.
+
+Install submodules and the repo with the ```--recursive``` flag:
 ```
-Make also sure to have Rust and C++ installed.
+sudo apt-get update
+sudo apt install binutils-dev
+git clone --recursive https://github.com/kajaaz/pcode-generator.git
+```
+You will need to adapt the path to your ```include/c++``` inside the ```ghidra-decompiler/build.rs``` file:
+```
+.clang_arg("-I/usr/include/c++/11")
+```
+If needed, export the correct path to Ghidra:
+```
+export GHIDRA_SRC=${HOME}/path/to/pcode-generator/ghidra
+```
 
 ## Usage
+If you work with Go binaries, make sure to have built them with BoringSSL:
+```
+GOEXPERIMENT=boringcrypto go build .
+```
 Getting this Pcode generator running is quite simple: 
 ```
 USAGE:

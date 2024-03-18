@@ -1,19 +1,30 @@
 use std::collections::{BTreeSet, HashMap};
+use std::env;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Write};
 use regex::Regex;
 use xml::reader::{EventReader, XmlEvent};
 
 fn main() -> io::Result<()> {
-    let input_path = "/home/kgorna/Documents/tools/pcode-generator/results/additiongo_low_pcode.txt";
+    let args: Vec<String> = env::args().collect();
+    if args.len() != 2 {
+        eprintln!("Usage: cargo run <INPUT_PCODE_PATH>");
+        std::process::exit(1);
+    }
+    
+    let input_path = &args[1];
     let output_path = "output.txt";
-    let callother_database_path = "/home/kgorna/Documents/tools/pcode-generator/scripts/callother_count/src/callother-database.txt";
+    
+    // Automatically construct the path to callother-database.txt
+    let mut callother_database_path = env::current_dir()?;
+    callother_database_path.push("src");
+    callother_database_path.push("callother-database.txt");
 
     let input_file = File::open(input_path)?;
     let reader = BufReader::new(input_file);
     let mut output_file = File::create(output_path)?;
 
-    let callother_db = load_callother_database(callother_database_path)?;
+    let callother_db = load_callother_database(callother_database_path.to_str().unwrap())?;
 
     let call_other_regex = Regex::new(r"CALLOTHER \(const,0x([0-9a-fA-F]+),\d+\)").unwrap();
     let mut operations_used = BTreeSet::new();
