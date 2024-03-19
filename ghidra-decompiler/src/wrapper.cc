@@ -83,13 +83,13 @@ rust::String PcodeDecoder::decode_addr(uint64_t addr_in, uint64_t *instr_len) co
   try {
     *instr_len = sleigh.oneInstruction(emit, addr); // Translate instruction
   } catch (const LowlevelError &e) {
-    throw runtime_error("Error: Disassembly failed due to LowlevelError: " +
-                        e.explain);
+    std::cerr << "LowlevelError at address 0x" << std::hex << addr_in << ": " << e.explain << "\n";
+    throw runtime_error("Error: Disassembly failed due to LowlevelError: " + e.explain);
   } catch (const std::exception &e) {
-    throw runtime_error(
-        string("Error: Disassembly failed due to a standard exception: ") +
-        e.what());
+    std::cerr << "Standard exception at address 0x" << std::hex << addr_in << ": " << e.what() << "\n";
+    throw runtime_error("Error: Disassembly failed due to a standard exception: " + string(e.what()));
   } catch (...) {
+    std::cerr << "Unknown error at address 0x" << std::hex << addr_in << "\n";
     throw runtime_error("Error: Disassembly failed due to an unknown error.");
   }
   return string(emit.getPcode());
