@@ -9,7 +9,7 @@ Make sure to have Rust and C++ installed.
 Install submodules and the repo with the ```--recursive``` flag:
 ```
 sudo apt-get update
-sudo apt install binutils-dev
+sudo apt install binutils-dev bison
 git clone --recursive https://github.com/kajaaz/pcode-generator.git
 ```
 You will need to adapt the path to your ```include/c++``` inside the ```ghidra-decompiler/build.rs``` file:
