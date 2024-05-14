@@ -6,6 +6,7 @@
 
 #include "loadimage.hh"
 #include "sleigh.hh"
+#include "pcoderaw.hh"
 
 #include "rust/cxx.h"
 
