@@ -9,4 +9,5 @@ use (
 	./tests/ptr_nil-deref_sleep
 	./tests/assert
 	./tests/additiongo
+	./tests/additiongo-ptrderef
 )
