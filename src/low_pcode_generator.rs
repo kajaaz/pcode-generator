@@ -1,13 +1,13 @@
 use goblin::elf::{self, Elf};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{self, Read, Write};
 
 use crate::pcode_generator;
 
 // Extracts symbols directly from the ELF file
-fn extract_symbols(elf: &Elf) -> HashMap<u64, u64> {
-    let mut symbols = HashMap::new();
+fn extract_symbols(elf: &Elf) -> BTreeMap<u64, u64> {
+    let mut symbols = BTreeMap::new();
     // Iterate over the symbol tables
     for sym in &elf.syms {
         // Check if the symbol is a function (type `STT_FUNC`)
