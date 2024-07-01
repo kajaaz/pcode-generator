@@ -10,4 +10,5 @@ use (
 	./tests/assert
 	./tests/additiongo
 	./tests/additiongo-ptrderef
+	./tests/additiongo-noruntime
 )
