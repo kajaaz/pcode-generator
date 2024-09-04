@@ -11,4 +11,5 @@ use (
 	./tests/additiongo
 	./tests/additiongo-ptrderef
 	./tests/additiongo-noruntime
+	./tests/additiongo-1thread
 )
