@@ -19,6 +19,7 @@ You will need to adapt the path to your ```include/c++``` inside the ```ghidra-d
 If needed, export the correct path to Ghidra:
 ```
 export GHIDRA_SRC=${HOME}/path/to/pcode-generator/ghidra
+export GHIDRA_INSTALL_DIR=/path/to/ghidra
 ```
 
 ## Usage
