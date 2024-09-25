@@ -1,0 +1,79 @@
+use goblin::elf::{self, Elf};
+use std::collections::BTreeMap;
+use std::fs::File;
+use std::io::{self, Read, Write};
+
+use crate::pcode_generator;
+
+// Extracts symbols directly from the ELF file
+fn extract_symbols(elf: &Elf) -> BTreeMap<u64, u64> {
+    let mut symbols = BTreeMap::new();
+    // Iterate over the symbol tables
+    for sym in &elf.syms {
+        // Check if the symbol is a function (type `STT_FUNC`)
+        if elf::sym::st_type(sym.st_info) == elf::sym::STT_FUNC {
+            // The symbol's value is the address and its size is directly available
+            symbols.insert(sym.st_value, sym.st_size);
+        }
+    }
+    symbols
+}
+
+// Writes the extracted symbols (functions and their sizes) to a file
+fn dump_function_info(symbols: &BTreeMap<u64, u64>, filename: &str) -> io::Result<()> {
+    let mut file = File::create(filename)?;
+    
+    writeln!(file, "Function Address    Size")?;
+    writeln!(file, "------------------------")?;
+    
+    for (start_addr, size) in symbols {
+        writeln!(file, "0x{:x}          {}", start_addr, size)?;
+    }
+    
+    Ok(())
+}
+
+pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
+    // Read the binary file
+    let mut f = File::open(filename)?;
+    let mut buffer = Vec::new();
+    f.read_to_end(&mut buffer)?;
+
+    // Parse the ELF file
+    let elf = Elf::parse(&buffer).map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+
+    // Configuration
+    const PROJECT: &str = env!("CARGO_MANIFEST_DIR");
+    let spec_file = format!("{}/src/specfiles/x86-64.sla", PROJECT);
+    let mut decoder = ghidra_decompiler::PcodeDecoder::new(&spec_file, &mut f, &elf)
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+    let mut output_file = pcode_generator::create_output_file(filename, "low")
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+
+    // Extract symbols with their sizes
+    let symbols = extract_symbols(&elf);
+
+    // Dump function information to a file
+    let function_info_file = format!("{}_functions.txt", filename);
+    dump_function_info(&symbols, &function_info_file)?;
+
+    for (start_addr, size) in symbols {
+        let end_addr = start_addr + size;
+        let mut addr = start_addr;
+
+        while addr < end_addr {
+            match decoder.decode_addr(addr) {
+                Ok((pcode, instruction_len)) => {
+                    write!(output_file, "0x{:x}\n{}", addr, pcode)?;
+                    addr += instruction_len;
+                },
+                Err(e) => {
+                    eprintln!("Error at address 0x{:x}: {}", addr, e);
+                    return Err(io::Error::new(io::ErrorKind::Other, "Disassembly error, stopping."));
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
