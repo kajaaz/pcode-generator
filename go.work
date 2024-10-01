@@ -12,5 +12,6 @@ use (
 	./tests/additiongo-ptrderef
 	./tests/additiongo-noruntime
 	./tests/additiongo-1thread
-	./tests/additiongo-taskset1
+	./tests/additiongo-tinygo
+	./tests/additiongo-tinygo_ptr-deref
 )
