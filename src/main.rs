@@ -29,7 +29,11 @@ fn main() {
             println!("Generating low pcode...");
             let res = low_pcode_generator::generate_low_pcode(&filename);
             match res {
-                Ok(()) => println!("Low pcode generation completed."),
+                Ok(()) => {
+                    println!("Low pcode generation completed.\n");
+                    print!("WARRING : If you had at last one error during the P-code generation process, there might be lacking instructions in your P-code file, check it up.\n");
+                    
+                }
                 Err(e) => {
                     eprintln!("Unable to finish correctly: {e}");
                     std::process::exit(-1);
