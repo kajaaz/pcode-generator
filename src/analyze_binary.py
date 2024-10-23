@@ -3,7 +3,6 @@ import pyhidra
 # Start Pyhidra
 pyhidra.start()
 
-# Now import Ghidra-related modules after Pyhidra is initialized
 from ghidra.program.model.symbol import SymbolType
 from ghidra.program.flatapi import FlatProgramAPI
 
@@ -21,7 +20,13 @@ def analyze_binary(binary_path):
                 function_name = symbol.getName()
                 function_size = function.getBody().getNumAddresses()
                 function_address = symbol.getAddress().getOffset()
-                
+
+                # Sanity check on function size
+                if function_size == 0:
+                    print(f"Warning: Function {function_name} at 0x{function_address:x} has size 0")
+                elif function_size > 0x10000:  # Threshold for unusually large functions
+                    print(f"Warning: Large function {function_name} at 0x{function_address:x} with size {function_size}")
+
                 # Store the function address, name, and size
                 function_info[function_address] = {
                     'name': function_name,

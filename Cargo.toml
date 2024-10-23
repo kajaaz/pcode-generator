@@ -11,6 +11,7 @@ goblin = "0.8.0"
 object = "0.34.0"
 gimli = "0.28.1"
 memmap = "0.7.0"
+log = "0.4.22"
 
 [workspace]
 members = ["ghidra-decompiler", "scripts/callother_count", "scripts/common_operations", "scripts/elf-vs-ghidra-functions", "scripts/get-all-callother"]
