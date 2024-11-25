@@ -17,6 +17,12 @@ pub fn generate_high_pcode(filename: &str) {
     };
     println!("Binary File: {bin_file}");
 
+    // Add Debugging to Print Paths
+    println!("Current working directory: {:?}", std::env::current_dir());
+    println!("Looking for x86-64.slaspec in ./Ghidra/Processors/x86/data/languages/");
+    let spec_path = "/home/kgorna/Documents/tools/pcode-generator/ghidra/Ghidra/Processors/x86/data/languages/x86-64.slaspec";
+    println!("Absolute path to spec: {spec_path}");
+
     println!("Building VM...");
     let mut vm = match icicle_vm::build(&icicle_vm::cpu::Config {
         triple: "x86_64-linux-gnu".parse().unwrap(),

@@ -21,4 +21,14 @@ use (
 	./tests/go-decodebytes
 	./tests/tinygo-mqtt
 	./tests/tinygo-compress
+	./tests/tingo-fatalthrow
+	./tests/tinygo-unsafeptr
+	./tests/tinygo-bug1
+	./tests/tinygo-stackspliterr
+	./tests/tinygo-reflect
+	./tests/tinygo_index-out-of-range
+	./tests/tinygo_assign-to-nil-map
+	./tests/tinygo_use-after-close-of-a-channel
+	./tests/tinygo_too-large-channel-creation
+	./tests/tinygo_negative-shift
 )

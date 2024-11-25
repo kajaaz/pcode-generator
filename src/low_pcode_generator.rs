@@ -1,101 +1,115 @@
 use goblin::elf::Elf;
-use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{self, Read, Write};
-use std::process::Command;
-use log::{info, error}; 
+use log::{info, error};
 
 use crate::pcode_generator;
 
-fn extract_symbols_with_pyhidra(filename: &str) -> io::Result<BTreeMap<u64, (String, u64)>> {
-    let output = Command::new("python3")
-        .arg("src/analyze_binary.py")  // Call the Python script
-        .arg(filename)
-        .output()?;
-
-    // Check if the process exited with an error
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        error!("Error running Pyhidra analysis: {}", stderr);
-        return Err(io::Error::new(io::ErrorKind::Other, "Failed to run Pyhidra analysis"));
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-
-    let mut symbols = BTreeMap::new();
-
-    // Parse the output from the Python script
-    for line in stdout.lines() {
-        let parts: Vec<&str> = line.split(':').collect();
-        if parts.len() != 3 {
-            error!("Malformed line in Pyhidra output: {}", line);
-            continue;
-        }
-        let address = u64::from_str_radix(parts[0], 16).unwrap_or(0);
-        let name = parts[1].to_string();
-        let size = parts[2].parse::<u64>().unwrap_or(0);
-
-        // log any unusually large or small functions
-        if size == 0 {
-            error!("Function {} at 0x{:x} has size 0", name, address);
-        } else if size > 0x10000 {
-            error!("Unusually large function {} at 0x{:x} with size {}", name, address, size);
-        }
-
-        symbols.insert(address, (name, size));
-    }
-
-    Ok(symbols)
-}
-
 pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
-    // Read the binary file
+    // Read the binary file into buffer
     let mut f = File::open(filename)?;
     let mut buffer = Vec::new();
     f.read_to_end(&mut buffer)?;
 
-    // Parse the ELF file (needed by the PcodeDecoder)
+    // Parse the ELF file
     let elf = Elf::parse(&buffer).map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
 
-    // Extract symbols using Pyhidra (get additional function information)
-    let symbols = extract_symbols_with_pyhidra(filename)?;
+    // Find the .text section
+    let text_section = elf.section_headers.iter().find(|section| {
+        if let Some(name) = elf.shdr_strtab.get_at(section.sh_name) {
+            name == ".text"
+        } else {
+            false
+        }
+    });
 
-    // Configuration
-    const PROJECT: &str = env!("CARGO_MANIFEST_DIR");
-    let spec_file = format!("{}/src/specfiles/x86-64.sla", PROJECT);
+    if let Some(text_section) = text_section {
+        let section_start = text_section.sh_addr;
+        let section_size = text_section.sh_size as usize;
+        let section_offset = text_section.sh_offset as usize;
 
-    // Pass the ELF data structure to the decoder, alongside the symbols
-    let mut decoder = ghidra_decompiler::PcodeDecoder::new(&spec_file, &mut f, &elf)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-    let mut output_file = pcode_generator::create_output_file(filename, "low")
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+        if section_offset + section_size > buffer.len() {
+            error!("Section .text goes beyond buffer size");
+            return Err(io::Error::new(io::ErrorKind::Other, "Invalid .text section size"));
+        }
 
-    // Iterate over symbols and decode instructions using the decoder
-    for (start_addr, (name, size)) in symbols {
-        let end_addr = start_addr + size;
-        let mut addr = start_addr;
+        // Configuration for P-code generation
+        const PROJECT: &str = env!("CARGO_MANIFEST_DIR");
+        let spec_file = format!("{}/src/specfiles/x86-64.sla", PROJECT);
 
-        info!("Decoding function {} at 0x{:x} with size {}", name, start_addr, size);
+        // Initialize the decoder with the file and ELF data
+        let mut decoder = ghidra_decompiler::PcodeDecoder::new(&spec_file, &mut f, &elf)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+        let mut output_file = pcode_generator::create_output_file(filename, "low")
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+
+        let mut addr = section_start;
+        let end_addr = section_start + section_size as u64;
+
+        info!("Decoding .text section from 0x{:x} to 0x{:x}", addr, end_addr);
 
         while addr < end_addr {
+            // Map the address to file offset
+            let file_offset = match vaddr_to_offset(&elf, addr) {
+                Some(offset) => offset,
+                None => {
+                    error!("Failed to map virtual address 0x{:x} to file offset", addr);
+                    addr += 1; // Skip one byte and continue
+                    continue;
+                }
+            };
+
+            let file_offset_usize = file_offset as usize;
+            if file_offset_usize >= buffer.len() {
+                error!("File offset 0x{:x} is beyond buffer size", file_offset);
+                break;
+            }
+            let max_bytes = buffer.len() - file_offset_usize;
+            let bytes_to_read = std::cmp::min(16, max_bytes);
+            let bytes = &buffer[file_offset_usize..file_offset_usize + bytes_to_read];
+            info!(
+                "Bytes at 0x{:x} (file offset 0x{:x}): {:02x?}",
+                addr, file_offset, bytes
+            );
+
+            // Decode the instruction
             match decoder.decode_addr(addr) {
                 Ok((pcode, instruction_len)) => {
-                    // ensure instruction length is valid
                     if instruction_len == 0 {
                         error!("Instruction at 0x{:x} has zero length", addr);
-                        break; 
+                        addr += 1; // Skip one byte to avoid infinite loop
+                        continue;
                     }
+                    info!("Instruction at 0x{:x} has length {}", addr, instruction_len);
 
                     write!(output_file, "0x{:x}\n{}", addr, pcode)?;
                     addr += instruction_len;
                 },
                 Err(e) => {
                     error!("Error decoding instruction at 0x{:x}: {}", addr, e);
-                    break;  
+                    addr += 1; // Skip one byte and continue
                 }
             }
         }
-    }
 
-    Ok(())
+        Ok(())
+    } else {
+        error!("Failed to find .text section");
+        Err(io::Error::new(io::ErrorKind::Other, "Failed to find .text section"))
+    }
+}
+
+fn vaddr_to_offset(elf: &Elf, vaddr: u64) -> Option<u64> {
+    for ph in &elf.program_headers {
+        if ph.p_type == goblin::elf::program_header::PT_LOAD {
+            let vm_start = ph.p_vaddr;
+            let vm_end = vm_start + ph.p_memsz;
+
+            if vaddr >= vm_start && vaddr < vm_end {
+                let offset = vaddr - vm_start + ph.p_offset;
+                return Some(offset);
+            }
+        }
+    }
+    None
 }

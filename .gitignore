@@ -2,3 +2,9 @@
 /results
 /.vscode
 /scripts/callother_count/outputs
+/tests/addition-ptrderef/addition-ptrderef_ghidra
+/tests/additiongo-ptrderef/additiongo-ptrderef_ghidra
+/tests/additiongo-tinygo_ptr-deref/additiongo-tinygo_ptr-deref_ghidra
+/tests/tinygo-bug1/tinygo-bug1_ghidra
+/tests/tinygo-compress/tinygo-compress_ghidra
+/tests/tinygo-unsafeptr/tinygo-unsafeptr_ghidra

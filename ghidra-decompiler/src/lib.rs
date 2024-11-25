@@ -56,21 +56,22 @@ impl<'a> PcodeDecoder<'a> {
     pub fn load_fill(&mut self, data: &mut [u8], addr: u64) {
         let start = addr;
         let end = addr + u64::try_from(data.len()).unwrap();
-
+    
         data.fill(0);
-        for header in self.elf.section_headers.iter() {
-            if header.sh_type == SHT_NOBITS {
-                // Ignore sections without file bytes
-                continue;
+    
+        for ph in self.elf.program_headers.iter() {
+            if ph.p_type != goblin::elf::program_header::PT_LOAD {
+                continue; // Skip non-loadable segments
             }
-            let section_start = header.sh_addr;
-            let section_end = section_start + header.sh_size;
-
-            // Test the intersection between (start..end) and (section_start..section_end)
-            if start < section_end && end > section_start {
-                let intersection_start = cmp::max(start, section_start);
-                let intersection_end = cmp::min(end, section_end);
-                let file_offset = header.sh_offset + (intersection_start - section_start);
+    
+            let segment_start = ph.p_vaddr;
+            let segment_end = segment_start + ph.p_filesz; // Use p_filesz for file data
+    
+            // Check for intersection between requested address range and segment
+            if start < segment_end && end > segment_start {
+                let intersection_start = cmp::max(start, segment_start);
+                let intersection_end = cmp::min(end, segment_end);
+                let file_offset = ph.p_offset + (intersection_start - segment_start);
                 self.file
                     .read_exact_at(
                         &mut data[(intersection_start - start) as usize
@@ -80,7 +81,7 @@ impl<'a> PcodeDecoder<'a> {
                     .unwrap();
             }
         }
-    }
+    }         
 }
 
 pub unsafe fn load_fill(elf_ptr: *mut u8, data: *mut u8, size: u32, addr: u64) {
