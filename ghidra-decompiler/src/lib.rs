@@ -9,7 +9,7 @@ pub mod sys {
 
 use std::{cmp, fs::File, mem::MaybeUninit, os::unix::fs::FileExt, pin::Pin};
 
-use goblin::elf::{section_header::SHT_NOBITS, Elf};
+use goblin::elf::Elf;
 
 #[cxx::bridge]
 mod ffi {
