@@ -7,15 +7,17 @@ pub mod low_pcode_generator;
 pub mod pcode_generator;
 
 fn main() {
+    // Initialize the logger
+    env_logger::init();
+    
     let args: Vec<String> = env::args().collect();
     let Some([_arg0, filename, mode]) = TryInto::<[String; 3]>::try_into(args).ok() else {
         eprintln!("Usage: cargo run <path_to_binary_file> --[high-pcode|low-pcode]");
         return;
     };
 
-    // Checking if filename is not empty
-    if filename.is_empty() {
-        eprintln!("Filename cannot be empty.");
+    if filename.is_empty() || mode.is_empty() {
+        eprintln!("Filename and mode cannot be empty.");
         return;
     }
 
@@ -30,9 +32,8 @@ fn main() {
             let res = low_pcode_generator::generate_low_pcode(&filename);
             match res {
                 Ok(()) => {
-                    println!("Low pcode generation completed.\n");
-                    print!("WARRING : If you had at last one error during the P-code generation process, there might be lacking instructions in your P-code file, check it up.\n");
-                    
+                    println!("Low pcode generation completed.");
+                    println!("WARNING: If there were errors during P-code generation, check your output file.");
                 }
                 Err(e) => {
                     eprintln!("Unable to finish correctly: {e}");
