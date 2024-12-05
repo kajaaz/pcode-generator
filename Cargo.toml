@@ -4,8 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-icicle-vm = { path = "icicle-emu/icicle-vm" }
-pcode = { path = "icicle-emu/sleigh/pcode" }
 ghidra-decompiler = { path = "ghidra-decompiler" }
 goblin = "0.8.0"
 object = "0.34.0"
