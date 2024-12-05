@@ -33,11 +33,11 @@ USAGE:
     cargo run [ABSOLUTE PATH TO BINARY] [FLAGS]
 
 FLAGS:
-    --high-pcode         Generate an output file with the Ghidra high level Pcode instructions
     --low-pcode          Generate an output file with the Ghidra low level (raw) Pcode instructions
+    (--high-pcode         Generate an output file with the Ghidra high level Pcode instructions)
 ```
 
-Be aware that the first build will take 2 to 3 minutes. After that, the generation of the file should be done in several seconds.
+Because the first build took 2 to 3 minutes with the option of generating the high level P-Code, we removed the support for it. You can reactivate it by uncommenting the right sections. You will need also to add [icicle-emu](https://github.com/icicle-emu/icicle-emu.git) as a submodule.
 
 You can generate the raw Pcode of a binary using Pcode-generator and then use [Pcode-parser](https://github.com/kajaaz/pcode-parser/tree/main) to parse the produced pcode. 
 

@@ -2,7 +2,7 @@
 
 use std::env;
 
-pub mod high_pcode_generator;
+// pub mod high_pcode_generator;
 pub mod low_pcode_generator;
 pub mod pcode_generator;
 
@@ -12,7 +12,7 @@ fn main() {
     
     let args: Vec<String> = env::args().collect();
     let Some([_arg0, filename, mode]) = TryInto::<[String; 3]>::try_into(args).ok() else {
-        eprintln!("Usage: cargo run <path_to_binary_file> --[high-pcode|low-pcode]");
+        eprintln!("Usage: cargo run <path_to_binary_file> --low-pcode]");
         return;
     };
 
@@ -22,11 +22,11 @@ fn main() {
     }
 
     match mode.as_str() {
-        "--high-pcode" => {
-            println!("Generating high pcode...");
-            high_pcode_generator::generate_high_pcode(&filename);
-            println!("High pcode generation completed.");
-        }
+        // "--high-pcode" => {
+        //     println!("Generating high pcode...");
+        //     high_pcode_generator::generate_high_pcode(&filename);
+        //     println!("High pcode generation completed.");
+        // }
         "--low-pcode" => {
             println!("Generating low pcode...");
             let res = low_pcode_generator::generate_low_pcode(&filename);
