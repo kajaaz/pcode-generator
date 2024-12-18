@@ -1,5 +1,5 @@
 use goblin::elf::Elf;
-use std::fs::{File, OpenOptions};
+use std::fs::File;
 use std::io::{self, Read, Write};
 use log::{info, warn};
 
@@ -15,7 +15,6 @@ pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
     let elf = Elf::parse(&buffer).map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
 
     // Get the output file path and create the file
-    let output_file_path = pcode_generator::output_file_path(filename, "low")?;
     let mut output_file = pcode_generator::create_output_file(filename, "low")
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
 
@@ -105,9 +104,6 @@ pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
     // Flush the file before appending calls from GOT
     drop(output_file);
 
-    // Integrate GOT.PLT calls by running the Python script and appending its output
-    integrate_got_plt_calls(filename, output_file_path.to_str().unwrap())?;
-
     Ok(())
 }
 
@@ -124,50 +120,4 @@ fn vaddr_to_offset(elf: &Elf, vaddr: u64) -> Option<u64> {
         }
     }
     None
-}
-
-fn integrate_got_plt_calls(binary_path: &str, low_pcode_path: &str) -> io::Result<()> {
-    let mut buffer = Vec::new();
-    let mut file = File::open(binary_path)?;
-    file.read_to_end(&mut buffer)?;
-
-    let elf = Elf::parse(&buffer).map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-
-    // Open output file for appending P-code
-    let mut output_file = OpenOptions::new()
-        .append(true)
-        .open(low_pcode_path)?;
-
-    // Locate the .got.plt section
-    if let Some(section) = elf.section_headers.iter().find(|section| {
-        if let Some(name) = elf.shdr_strtab.get_at(section.sh_name) {
-            name == ".got.plt"
-        } else {
-            false
-        }
-    }) {
-        let section_start = section.sh_addr;
-        let section_size = section.sh_size as usize;
-        let section_offset = section.sh_offset as usize;
-
-        if section_offset + section_size <= buffer.len() {
-            let section_data = &buffer[section_offset..section_offset + section_size];
-
-            for (i, entry) in section_data.chunks(8).enumerate() {
-                let entry_addr = section_start + (i * 8) as u64;
-                let entry_value = u64::from_le_bytes(entry.try_into().unwrap_or_default());
-
-                // Write P-code instructions for .got.plt entry
-                writeln!(
-                    output_file,
-                    "0x{:x}\nCALL (ram,0x{:x},8)",
-                    entry_addr, entry_value
-                )?;
-            }
-        }
-    } else {
-        info!("No .got.plt section found; skipping.");
-    }
-
-    Ok(())
 }
