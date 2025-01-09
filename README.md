@@ -30,11 +30,14 @@ GOEXPERIMENT=boringcrypto go build .
 Getting this Pcode generator running is quite simple: 
 ```
 USAGE:
-    cargo run [ABSOLUTE PATH TO BINARY] [FLAGS]
+    cargo run [ABSOLUTE PATH TO BINARY] [FLAGS] [OPTION]
 
 FLAGS:
     --high-pcode         Generate an output file with the Ghidra high level Pcode instructions
     --low-pcode          Generate an output file with the Ghidra low level (raw) Pcode instructions
+
+OPTION:
+    --base-addr          Define the base address only for low P-Code generation (default at 0)
 ```
 
 Be aware that the first build will take 2 to 3 minutes. After that, the generation of the file should be done in several seconds.
@@ -44,7 +47,7 @@ You can generate the raw Pcode of a binary using Pcode-generator and then use [P
 ## Example of use
 If you want to generate the high-level Pcode of the binary "calculus", use the following command in ```pcode-generator/src```:
 ```
-cargo run /absolute/path/to/tests/calculus/calculus --high-pcode
+cargo run /absolute/path/to/tests/calculus/calculus --low-pcode --base-addr 0x200000
 ```  
 The output file with the generated Pcode can be found in the locally created ```results``` directory at the root of the repo.
 

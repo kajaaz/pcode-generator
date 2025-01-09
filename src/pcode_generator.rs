@@ -21,12 +21,12 @@ pub fn output_file_path(input_name: &str, type_name: &str) -> io::Result<PathBuf
     fs::create_dir_all(&output_path)?;
 
     // Extract the filename from the provided file path
-    let file_stem: &OsStr = Path::new(input_name)
-        .file_stem()
+    let file_name: &OsStr = Path::new(input_name)
+        .file_name()
         .unwrap_or_else(|| OsStr::new("generated"));
 
     let filename: OsString = [
-        file_stem,
+        file_name,
         OsStr::new("_"),
         OsStr::new(type_name),
         OsStr::new("_pcode.txt"),
