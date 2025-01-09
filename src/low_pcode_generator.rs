@@ -5,7 +5,7 @@ use log::{info, warn};
 
 use crate::pcode_generator;
 
-pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
+pub fn generate_low_pcode(filename: &str, base_addr: u64) -> io::Result<()> {
     // Read the binary file into buffer
     let mut f = File::open(filename)?;
     let mut buffer = Vec::new();
@@ -46,11 +46,11 @@ pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
             let spec_file = format!("{}/src/specfiles/x86-64.sla", PROJECT);
 
             // Initialize the decoder
-            let mut decoder = ghidra_decompiler::PcodeDecoder::new(&spec_file, &mut f, &elf)
+            let mut decoder = ghidra_decompiler::PcodeDecoder::new(&spec_file, &mut f, &elf, base_addr)
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
 
             let mut addr = section_start;
-            let end_addr = section_start + section_size as u64;
+            let end_addr = addr + section_size as u64;
 
             while addr < end_addr {
                 // Map the address to file offset
@@ -85,7 +85,7 @@ pub fn generate_low_pcode(filename: &str) -> io::Result<()> {
                         }
                         info!("Instruction at 0x{:x} has length {}", addr, instruction_len);
 
-                        writeln!(output_file, "0x{:x}", addr)?;
+                        writeln!(output_file, "0x{:x}", addr + base_addr)?;
                         write!(output_file, "{}", pcode)?;
 
                         addr += instruction_len;

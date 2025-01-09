@@ -47,7 +47,7 @@ fn main() {
     // generate the bindings file
     let bindings = bindgen::Builder::default()
         .clang_arg(&format!("-I{disassembler_dir}"))
-        .clang_arg("-std=c++14")
+        .clang_arg("-std=c++17")
         //.disable_untagged_union()
 
         // ADAPT HERE THE PATH TO C++
@@ -75,7 +75,7 @@ fn main() {
 
     // Compile and link the C++ code
     cxx_build::bridge("src/lib.rs")
-        .flag("-std=c++14")
+        .flag("-std=c++17")
         .flag("-Wno-unused-parameter")
         .warnings(false)
         .include("src")

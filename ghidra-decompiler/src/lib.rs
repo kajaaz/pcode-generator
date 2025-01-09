@@ -17,7 +17,7 @@ mod ffi {
         include!("ghidra-decompiler/src/wrapper.hh");
         type PcodeDecoder;
 
-        unsafe fn new_pcode_decoder(specfile: &str, elf: *mut u8) -> UniquePtr<PcodeDecoder>;
+        unsafe fn new_pcode_decoder(specfile: &str, elf: *mut u8, base_addr: u64) -> UniquePtr<PcodeDecoder>;
         unsafe fn decode_addr(&self, addr: u64, instr_len: *mut u64) -> Result<String>;
     }
 
@@ -37,11 +37,12 @@ impl<'a> PcodeDecoder<'a> {
         spec_file: &str,
         file: &'a mut File,
         elf: &'a Elf<'a>,
+        base_addr: u64,
     ) -> Result<Pin<Box<Self>>, Box<dyn std::error::Error>> {
         unsafe {
             let mut slf = Box::pin(MaybeUninit::zeroed());
             let slf_ptr = core::mem::transmute(&mut *slf);
-            let decoder = ffi::new_pcode_decoder(spec_file, slf_ptr);
+            let decoder = ffi::new_pcode_decoder(spec_file, slf_ptr, base_addr);
             slf.write(Self { decoder, file, elf });
             Ok(core::mem::transmute(slf))
         }

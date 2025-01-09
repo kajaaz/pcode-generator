@@ -11,15 +11,16 @@ using namespace ghidra;
 
 // This is the only important method for the LoadImage. It returns bytes from
 // the static array depending on the address range requested
+// In Ghidra the addresses are 'absolute', whereas in this loadfill function, the addresses are considered without the base address
 void MyLoadImage::loadFill(uint1 *ptr, int4 size, const Address &addr) {
-  load_fill(rust_dec, ptr, size, addr.getOffset());
+  load_fill(rust_dec, ptr, size, addr.getOffset() - base_addr);
 }
 
 // -------------------------------
 //
 // These are the classes/routines relevant to printing a pcode translation
 // Modified function to handle spaces ID for LOAD and STORE
-static void print_vardata(ostream &s, OpCode opc, const VarnodeData &data, bool isFirstParam) {
+void print_vardata(ostream &s, OpCode opc, const VarnodeData &data, bool isFirstParam) {
   if ((opc == CPUI_LOAD || opc == CPUI_STORE) && isFirstParam && data.space->getType() == IPTR_CONSTANT) {
     AddrSpace *spc = data.getSpaceFromConst();
     s << '(' << spc->getName() << ')';
@@ -54,8 +55,8 @@ public:
 
 // TODO configure a base address or just implement an elf reader instead of
 // using a raw binary
-PcodeDecoder::PcodeDecoder(string &specfile, uint8_t *rust_dec)
-    : loader(rust_dec), sleigh(&loader, &context) {
+PcodeDecoder::PcodeDecoder(string &specfile, uint8_t *rust_dec, rust::cxxbridge1::u64 base_addr) 
+  : loader(rust_dec, base_addr), sleigh(&loader, &context), base_addr(base_addr) { 
   // Read sleigh file into DOM
   Element *sleighroot = docstorage.openDocument(specfile)->getRoot();
   docstorage.registerTag(sleighroot);
@@ -71,6 +72,8 @@ PcodeDecoder::PcodeDecoder(string &specfile, uint8_t *rust_dec)
   context.setVariableDefault("bit64", 1);      // 64-bit addressing
   context.setVariableDefault("addrsize", 2);   // Address size is 64-bit
   context.setVariableDefault("opsize", 1);     // Operand size is 64-bit
+
+  return;
 }
 
 // -------------------------------------
@@ -78,7 +81,7 @@ PcodeDecoder::PcodeDecoder(string &specfile, uint8_t *rust_dec)
 // Functions called directly from rust
 
 rust::String PcodeDecoder::decode_addr(uint64_t addr_in, uint64_t *instr_len) const {
-  Address addr(sleigh.getDefaultCodeSpace(), addr_in);
+  Address addr(sleigh.getDefaultCodeSpace(), addr_in + this->base_addr);
   PcodeRawOut emit;
   int4 length;
 
@@ -103,12 +106,11 @@ void PcodeDecoder::updateContext(void) {
     context.setVariableDefault("opsize", 2);   // Operand size is 64-bit
 }
 
-unique_ptr<PcodeDecoder> new_pcode_decoder(rust::Str specfile_str,
-                                           uint8_t *rust_dec) {
+unique_ptr<PcodeDecoder> new_pcode_decoder(rust::Str specfile_str, uint8_t *rust_dec, rust::cxxbridge1::u64 base_addr) {
   std::string specfile(specfile_str);
 
   AttributeId::initialize();
   ElementId::initialize();
 
-  return unique_ptr<PcodeDecoder>(new PcodeDecoder(specfile, rust_dec));
+  return unique_ptr<PcodeDecoder>(new PcodeDecoder(specfile, rust_dec, base_addr));
 }
