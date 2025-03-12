@@ -13,22 +13,22 @@ fn main() {
     };
 
     // rerun if any file in ghidra change
-    for file in std::fs::read_dir(&disassembler_dir).unwrap() {
-        let file = file.unwrap();
-        let path = file.path();
-        // rerun if any of those files change
-        match file.path().extension().map(|ext| ext.to_str()).flatten() {
-            // code file
-            Some("cc") | Some("hh") | Some("c") | Some("h") | Some("y") | Some("l") => {
-                println!("cargo:rerun-if-changed={}", path.to_str().unwrap())
-            }
-            // Makefile
-            _ if file.file_name().to_str().unwrap() == "Makefile" => {
-                println!("cargo:rerun-if-changed={}", path.to_str().unwrap())
-            }
-            _ => {}
-        }
-    }
+    // for file in std::fs::read_dir(&disassembler_dir).unwrap() {
+    //     let file = file.unwrap();
+    //     let path = file.path();
+    //     // rerun if any of those files change
+    //     match file.path().extension().map(|ext| ext.to_str()).flatten() {
+    //         // code file
+    //         Some("cc") | Some("hh") | Some("c") | Some("h") | Some("y") | Some("l") => {
+    //             println!("cargo:rerun-if-changed={}", path.to_str().unwrap())
+    //         }
+    //         // Makefile
+    //         _ if file.file_name().to_str().unwrap() == "Makefile" => {
+    //             println!("cargo:rerun-if-changed={}", path.to_str().unwrap())
+    //         }
+    //         _ => {}
+    //     }
+    // }
 
     println!("cargo:rerun-if-changed=src/wrapper.cc");
     println!("cargo:rerun-if-changed=src/wrapper.hh");
