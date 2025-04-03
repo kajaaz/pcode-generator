@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -11,24 +10,23 @@ import (
 )
 
 func main() {
-	// Get user input for the data to be compressed and decompressed
-	fmt.Println("Enter some data to compress:")
-	reader := bufio.NewReader(os.Stdin)
-	input, err := reader.ReadString('\n')
-	if err != nil {
-		log.Fatalf("Error reading input: %v\n", err)
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: ./tinygo-compress <input>")
+		return
 	}
-	input = strings.TrimSpace(input) 
+
+	input := os.Args[1]
+	input = strings.TrimSpace(input)
 
 	// Convert the input string to bytes
 	data := []byte(input)
 
 	// Compress the data
-	// compressed := bitutil.CompressBytes(data)
-	// fmt.Printf("Compressed Data: %v\n", compressed)
+	compressed := bitutil.CompressBytes(data)
+	fmt.Printf("Compressed Data: %v\n", compressed)
 
-	// Decompress the data
-	decompressed, err := bitutil.DecompressBytes(data, len(data) + 20)
+	// Decompress the data using the compressed output
+	decompressed, err := bitutil.DecompressBytes(compressed, len(data))
 	if err != nil {
 		log.Fatalf("Decompression error: %v\n", err)
 	}
