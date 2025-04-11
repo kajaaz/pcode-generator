@@ -82,4 +82,5 @@ fn main() {
         .include(disassembler_dir)
         .file("src/wrapper.cc")
         .compile("cxxbridge");
+    println!("cargo:rustc-link-lib=z");
 }
