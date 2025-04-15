@@ -6,11 +6,13 @@ Currently covered and partiely tested binaries handling from following languages
 ## Install
 Make sure to have Rust and C++ installed.
 
-Install submodules and the repo with the ```--recursive``` flag:
+Install submodules and the repo with the ```--recursive``` flag and build sleigh_opt from the local Ghidra submodule to compile x86-64.slaspec into a binary x86-64.sla with the ```make``` command:
 ```
 sudo apt-get update
 sudo apt install binutils-dev bison
 git clone --recursive https://github.com/kajaaz/pcode-generator.git
+cd pcode-generator
+make
 ```
 You will need to adapt the path to your ```include/c++``` inside the ```ghidra-decompiler/build.rs``` file:
 ```
