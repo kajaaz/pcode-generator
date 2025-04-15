@@ -2,6 +2,7 @@
 #include <exception>
 #include <iostream>
 #include <string.h>
+#include <sstream>
 
 #include "ghidra-decompiler/src/lib.rs.h"
 #include "wrapper.hh"
@@ -57,11 +58,36 @@ public:
 // using a raw binary
 PcodeDecoder::PcodeDecoder(string &specfile, uint8_t *rust_dec, rust::cxxbridge1::u64 base_addr) 
   : loader(rust_dec, base_addr), sleigh(&loader, &context), base_addr(base_addr) { 
-  // Read sleigh file into DOM
-  Element *sleighroot = docstorage.openDocument(specfile)->getRoot();
-  docstorage.registerTag(sleighroot);
-  sleigh.initialize(docstorage); // Initialize the translator
+  
+  std::cerr << "[CONSTRUCTOR] specfile='" << specfile
+      << "' base_addr=0x" << std::hex << base_addr << std::endl;
 
+  // 1) Wrap the .sla path in <sleigh>...</sleigh>
+  std::string wrappedXml = "<sleigh>" + specfile + "</sleigh>";
+  std::istringstream sleighSpecStream(wrappedXml);
+
+  try {
+    // 2) Parse the tiny XML doc
+    Element *sleighroot = docstorage.parseDocument(sleighSpecStream)->getRoot();
+    docstorage.registerTag(sleighroot);
+  
+    // DEBUG: Print the root element name and text
+    // std::cerr << "[CONSTRUCTOR] [DEBUG] sleighroot->getName():   "
+    //           << sleighroot->getName() << std::endl;
+    // std::cerr << "[CONSTRUCTOR] [DEBUG] sleighroot->getContent(): "
+    //           << sleighroot->getContent() << std::endl;
+  
+    // 3) Let the Sleigh engine load the compiled .sla
+    sleigh.initialize(docstorage);
+    std::cerr << "[CONSTRUCTOR] Sleigh initialization SUCCESS" << std::endl;
+  
+  } catch (const ghidra::LowlevelError &err) {
+    // Use 'err.explain' instead of 'err.what()'
+    std::cerr << "[CONSTRUCTOR] Sleigh initialization FAILED: "
+              << err.explain << std::endl;
+    throw; // re-throw or handle as needed
+  }
+  
   // Now that context symbol names are loaded by the translator
   // we can set the default context
   // x86_64 64bits: longMode = 1, bit64 = 1, addrsize = 2, opsize = 1
@@ -79,7 +105,6 @@ PcodeDecoder::PcodeDecoder(string &specfile, uint8_t *rust_dec, rust::cxxbridge1
 // -------------------------------------
 //
 // Functions called directly from rust
-
 rust::String PcodeDecoder::decode_addr(uint64_t addr_in, uint64_t *instr_len) const {
   Address addr(sleigh.getDefaultCodeSpace(), addr_in + this->base_addr);
   PcodeRawOut emit;

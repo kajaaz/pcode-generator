@@ -43,7 +43,8 @@ pub fn generate_low_pcode(filename: &str, base_addr: u64) -> io::Result<()> {
 
             // Configuration for P-code generation
             const PROJECT: &str = env!("CARGO_MANIFEST_DIR");
-            let spec_file = format!("{}/src/specfiles/x86-64.sla", PROJECT);
+            //let spec_file = format!("{}/src/specfiles/x86-64.sla", PROJECT);
+            let spec_file = format!("{}/ghidra/Ghidra/Processors/x86/data/languages/x86-64.sla", PROJECT); 
 
             // Initialize the decoder
             let mut decoder = ghidra_decompiler::PcodeDecoder::new(&spec_file, &mut f, &elf, base_addr)
